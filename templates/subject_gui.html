@@ -171,18 +171,19 @@
                     <li>Complete the tasks as directed.</li>
                     <li>Press "Task Complete" when you have finished the task.</li>
                 </ul>
-                <button class="taskComplete" id="sart2Complete" onclick="completeTask('sart_2'); setSARTMessage('sartComplete2');">Task Complete</button>
+                <button class="taskComplete" id="sart2Complete" onclick="completeTask('sart_2')">Task Complete</button>
                 
             </div><br>
-            <p id="sartComplete2" style="display:none; color:red;">Further instructions will be provided by the experimenter shortly</p>
 
             <!-- NEW SURVEY -->
             <button class="toggle nextButton" id="surveyIpr1Button" style="display:none;">Survey</button>
             <div class="innerModule nextDiv" id="surveyIpr1Div" style="display:none;">
                 <p>Please fill out this form.</p>
                 <div id="ipr1Div" style="display:block;"></div><br>
-                <button class="taskComplete" id="ipr1Complete" onclick="completeTask('survey_ipr1')">Task Complete</button>
+                <button class="taskComplete" id="ipr1Complete" onclick="completeTask('survey_ipr1'); setSARTMessage('sartComplete2');">Task Complete</button>
             </div><br>
+
+            <p id="sartComplete2" style="display:none; color:red;">Further instructions will be provided by the experimenter shortly</p>
 
             <button class="toggle nextButton" style="display:none;">SART Task 3</button>
             <div class="innerModule nextDiv" style="display:none;">
@@ -253,16 +254,18 @@
                     <li>Complete the tasks as directed.</li>
                     <li>Press "Task Complete" when you have finished the task.</li>
                 </ul>
-                <button class="taskComplete" id="sart5Complete" onclick="completeTask('sart_5'); setSARTMessage('sartComplete5');">Task Complete</button>
+                <button class="taskComplete" id="sart5Complete" onclick="completeTask('sart_5')">Task Complete</button>
             </div><br>
-            <p id="sartComplete5" style="display:none; color:red;">Further instructions will be provided by the experimenter shortly</p>
+    
             
             <button class="toggle nextButton" id="surveyIpr3Button" style="display:none;">Survey</button>
             <div class="innerModule nextDiv" id="surveyIpr3Div" style="display:none;">
                 <p>Please fill out this form.</p>
                 <div id="ipr3Div" style="display:block;"></div><br>
-                <button class="taskComplete" id="ipr3Complete" onclick="completeTask('survey_ipr3')">Task Complete</button>
+                <button class="taskComplete" id="ipr3Complete" onclick="completeTask('survey_ipr3'); setSARTMessage('sartComplete5');">Task Complete</button>
             </div><br>
+            
+            <p id="sartComplete5" style="display:none; color:red;">Further instructions will be provided by the experimenter shortly</p>
             
             <button class="toggle nextButton" style="display:none;">SART Task 6</button>
             <div class="innerModule nextDiv" style="display:none;">
