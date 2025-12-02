@@ -100,9 +100,9 @@
     <div id="mainTasksDiv" style="display:none;">
         <div class="testModule" style="display:block;">
             <p>After completing a task, please wait for instructions before advancing to the next task.</p>
-            
-            <button class="toggle nextButton" style="display:block;">SART Task 1</button>
-            <div class="innerModule nextDiv" style="display:block;">
+            <!--TEST -->
+            <button class="toggle nextButton" style="display:none;">SART Task 1</button>
+            <div class="innerModule nextDiv" style="display:none;">
                 <ul>
                     <li>The test supervisor will now assist you with the first SART.</li>
                     <li>Complete the tasks as directed.</li>
@@ -500,6 +500,10 @@
             serComplete.addEventListener('click', function() {
                 serComplete.disabled = true;
                 mainTasksDiv.style.display = 'block';
+
+                //TEST
+                document.querySelector('#mainTasksDiv .nextButton').style.display = 'block';
+                document.querySelector('#mainTasksDiv .nextDiv').style.display = 'block';
                 setEventMarker('sart_1');
             });
 
