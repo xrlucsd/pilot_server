@@ -27,7 +27,7 @@ scikit-image==0.20.0
 # --- Data ---
 pandas==2.2.2
 python-dateutil==2.9.0.post0
-h5py==3.7.0
+h5py==3.11.0
 
 # --- ML / deep learning ---
 torch==2.5.1
