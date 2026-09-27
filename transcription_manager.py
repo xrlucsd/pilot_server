@@ -72,13 +72,17 @@ class TranscriptionManager:
             str: The transcription result of the audio file, or None if filtered out.
         """
         try:
-            result = self.model.transcribe(
-                audio_file,
-                language="en",
-                no_speech_threshold=0.6,
-                logprob_threshold=-1.0,
-                condition_on_previous_text=False,
-            )
+            # Whisper model inference is not safe to run concurrently. If a
+            # timed-out request is still finishing in the background, later
+            # requests wait here instead of competing for the same model.
+            with self.lock:
+                result = self.model.transcribe(
+                    audio_file,
+                    language="en",
+                    no_speech_threshold=0.6,
+                    logprob_threshold=-1.0,
+                    condition_on_previous_text=False,
+                )
             
             text = result["text"].strip()
             

@@ -24,7 +24,6 @@ from audio_file_manager import AudioFileManager
 from form_manager import FormManager
 from timestamp_manager import TimestampManager
 from werkzeug.utils import secure_filename
-from concurrent.futures import ThreadPoolExecutor, TimeoutError as FutureTimeoutError
 
 app = Flask(__name__)
 emotibit_thread = None
@@ -1424,22 +1423,32 @@ def generate_timestamps(start_time_dt, segment_duration=20, output_folder="tmp/"
 ##################################################################
 def transcribe_audio(file, timeout_seconds=15) -> str:
     global transcription_manager
-    
-    with ThreadPoolExecutor(max_workers=1) as executor:
-        try:
-            future = executor.submit(transcription_manager.transcribe, file)
-            result = future.result(timeout=timeout_seconds)
 
-            return result if result is not None else "Sorry, I could not understand the response."
-            
-        except FutureTimeoutError:
-            print(f"Transcription timed out after {timeout_seconds} seconds for file: {file}")
-            executor.shutdown(wait=False, cancel_futures=True)  # Force cleanup
-            return "Sorry, I could not understand the response."
-            
+    result_holder = {}
+
+    def run_transcription():
+        try:
+            result_holder['result'] = transcription_manager.transcribe(file)
         except Exception as e:
-            print(f"An error occurred during transcription: {str(e)}")
-            return "Sorry, something went wrong with the transcription."
+            result_holder['error'] = e
+
+    # A daemon thread lets the request return if Whisper stalls. A
+    # ThreadPoolExecutor context manager waits for its worker during shutdown,
+    # which previously made the timeout ineffective.
+    transcription_thread = threading.Thread(target=run_transcription, daemon=True)
+    transcription_thread.start()
+    transcription_thread.join(timeout_seconds)
+
+    if transcription_thread.is_alive():
+        print(f"Transcription timed out after {timeout_seconds} seconds for file: {file}")
+        return "Sorry, I could not understand the response."
+
+    if 'error' in result_holder:
+        print(f"An error occurred during transcription: {str(result_holder['error'])}")
+        return "Sorry, something went wrong with the transcription."
+
+    result = result_holder.get('result')
+    return result if result is not None else "Sorry, I could not understand the response."
 
 def run_flask():
     app.run(debug=False, use_reloader=False)
