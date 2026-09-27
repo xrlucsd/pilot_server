@@ -1037,7 +1037,9 @@
                 console.log("Confirming transcription... timeUp = ", this.timeUp);
                 
                 const abortController = new AbortController();
-                const timeoutId = setTimeout(() => abortController.abort(), 10000); // 10 second timeout
+                // The server allows Whisper 15 seconds after stopping the audio
+                // stream, so leave enough time to receive its fallback response.
+                const timeoutId = setTimeout(() => abortController.abort(), 25000);
                 
                 fetch('/confirm_transcription', {
                     signal: abortController.signal,
@@ -1062,6 +1064,10 @@
                         console.log(this.confirmStatus);
                         console.log(this.confirmMessage);
                     }
+
+                    if(callback){
+                        callback();
+                    }
                 })
                 .catch(error => {
                     clearTimeout(timeoutId);
@@ -1075,9 +1081,6 @@
                 })
                 .finally(() => {
                     clearTimeout(timeoutId);
-                    if(callback){
-                        callback();
-                    }
                 });
             }
 
