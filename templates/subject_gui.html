@@ -928,15 +928,13 @@
                 })
                 .then(data => {
                     console.log(data);
+                    if (callback){
+                        callback();
+                    }
                 })
                 .catch(error => {
                     console.error('Error:', error);
                     alert('Failed to set test number.');
-                })
-                .finally(() => {
-                    if (callback){
-                        callback();
-                    }
                 });
             }
 
