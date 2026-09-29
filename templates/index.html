@@ -422,6 +422,12 @@
                 if (taskStatusDiv) {
                     taskStatusDiv.style.display = "block";
                 }
+            } else if (data.event_type === 'task_reopened' && data.task_id) {
+                console.log("Task reopened:", data.message);
+                const taskStatusDiv = document.getElementById(data.task_id);
+                if (taskStatusDiv) {
+                    taskStatusDiv.style.display = "none";
+                }
             } else if (data.event_type === 'status_update') {
                 console.log("Status update:", data.message);
             } else if (data.event_type === 'error') {

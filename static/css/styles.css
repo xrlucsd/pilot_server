@@ -18,6 +18,81 @@ body h1, body h2, h3, h4 {
     margin-bottom: 20px;
 }  
 
+.task-current {
+    border-left: 5px solid #356c9b;
+    background-color: #eaf2f8;
+}
+
+button.task-current {
+    border: 2px solid #356c9b;
+    font-weight: 600;
+}
+
+.innerModule.task-current::before,
+.nextDiv.task-current::before {
+    content: "Current Task";
+    display: block;
+    margin-bottom: 12px;
+    color: #234f73;
+    font-family: sans-serif;
+    font-size: 0.9rem;
+    font-weight: 700;
+}
+
+.task-completed {
+    border-left: 5px solid #43835b;
+    background-color: #edf7f0;
+}
+
+.task-hold {
+    border-left: 5px solid #c67819;
+    background-color: #fff3df;
+}
+
+button.task-hold {
+    border: 2px solid #c67819;
+    font-weight: 600;
+}
+
+.innerModule.task-hold::before,
+.nextDiv.task-hold::before {
+    content: "Waiting for Experimenter";
+    display: block;
+    margin-bottom: 12px;
+    color: #8a4d09;
+    font-family: sans-serif;
+    font-size: 0.9rem;
+    font-weight: 700;
+}
+
+button.task-completed {
+    border: 2px solid #43835b;
+}
+
+.task-completion-status {
+    margin: 12px 0 0;
+    color: #2f6844;
+    font-family: sans-serif;
+    font-weight: 600;
+}
+
+.reopen-task {
+    margin-left: 10px;
+    font-weight: 400;
+}
+
+@media (max-width: 700px) {
+    .testModule,
+    .innerModule {
+        padding: 14px;
+    }
+
+    iframe,
+    video {
+        max-width: 100%;
+    }
+}
+
 /* .meter {
     width: 110px;
     height: 30px;

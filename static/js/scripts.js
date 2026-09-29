@@ -42,15 +42,50 @@ function processAudioFiles(statusElement, pathElement){
     });
 }
 
-function completeTask(taskId) {
-    fetch('/complete_task', { 
+function completeTask(taskId, button) {
+    if (button) {
+        button.disabled = true;
+    }
+
+    return fetch('/complete_task', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'},
-        body: JSON.stringify({ task_id: taskId })
+        body: JSON.stringify({ task_id: taskId, action: 'complete' })
     })
-    .then(response => console.log(`Task ${taskId} completed`))
-    .catch(error => console.error('Error:', error));
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`Unable to complete task (${response.status})`);
+        }
+        console.log(`Task ${taskId} completed`);
+        if (button && typeof markTaskCompleted === 'function') {
+            markTaskCompleted(button, taskId);
+        }
+        return response.json();
+    })
+    .catch(error => {
+        if (button) {
+            button.disabled = false;
+        }
+        console.error('Error:', error);
+        return null;
+    });
+}
+
+function reopenTask(taskId) {
+    return fetch('/complete_task', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'},
+        body: JSON.stringify({ task_id: taskId, action: 'reopen' })
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`Unable to reopen task (${response.status})`);
+        }
+        console.log(`Task ${taskId} reopened`);
+        return response.json();
+    });
 }
 
 function sendStatus() {

@@ -50,18 +50,18 @@
         <div class="innerModule" id="survey1Div" style="display:none;">
             <p>Please fill out this form.</p>
             <div id="demographicsDiv" style="display:block;"></div><br>
-            <button class="taskComplete" onclick="completeTask('survey_1')">Task Complete</button>
+            <button class="taskComplete" onclick="completeTask('survey_1', this)">Task Complete</button>
         </div><br>
 
         <button class="toggle nextButton" style="display:none;">Survey 2</button>
         <div class="innerModule nextDiv" style="display:none;">
             <p>Please fill out this form.</p>
             <div id="pss10Div" style="display:none;"></div><br>
-            <button class="taskComplete" onclick="completeTask('survey_2')">Task Complete</button>
+            <button class="taskComplete" onclick="completeTask('survey_2', this)">Task Complete</button>
         </div><br>
 
-        <button class="toggle nextButton" style="display:none;">Password</button>
-        <div class="innerModule nextDiv" style="display:none;">
+        <button class="toggle nextButton task-hold" style="display:none;">Password</button>
+        <div class="innerModule nextDiv task-hold" style="display:none;">
             <p>Thank you for filling out the pre-test information. Please let the experimenter know you have completed this section.</p>
             <form action="/submit_pwd" method="POST" id="experimenterPwd1" autocomplete="off">
                 <label for="password">Password:</label>
@@ -79,7 +79,7 @@
             </ul><br>
             <p id="audioStatusMessage"></p>
             <button id="testAudio">Record</button><br><br>
-            <button class="taskComplete" onclick="completeTask('test_transcription')">Task Complete</button>
+            <button class="taskComplete" onclick="completeTask('test_transcription', this)">Task Complete</button>
         </div><br>
 
         <button class="toggle nextButton" style="display:none;">Mood Q&A</button>
@@ -87,13 +87,13 @@
             <ul>
                 <li>Press "Begin" to start recording</li>
                 <li>Speak your answer to each question aloud</li>
-                <li>Press "Submit" to register your answer and receive the next question</li>
+                <li>Press "Submit Answer" to register your answer and receive the next question.</li>
             </ul> <br>
             <button id="beginSERButton">Begin</button>
             <p id="QAStatus" style="display:none;" disabled></p>
             <p id="questionContainer" style="display:none;" disabled></p>
             <button id="submitAnswer" style="display:none;" disabled>Submit Answer</button><br><br>
-            <button id="serComplete" onclick="completeTask('ser_baseline')">Task Complete</button>
+            <button id="serComplete" class="taskComplete" onclick="completeTask('ser_baseline', this)">Task Complete</button>
         </div><br>
     </div><br>
 
@@ -108,20 +108,22 @@
                     <li>Complete the tasks as directed.</li>
                     <li>Press "Task Complete" when you have finished the task.</li>
                 </ul>
-                <button id="sart1Complete" class="taskComplete" onclick="completeTask('sart_1')">Task Complete</button>
+                <button id="sart1Complete" class="taskComplete" onclick="completeTask('sart_1', this)">Task Complete</button>
             </div><br>
 
             <button id="practiceTestButton" class="toggle nextButton" style="display:none;">Practice Test</button>
             <div class="innerModule test-container nextDiv" id="practiceTestContainer" style="display:none;">
                 <p>Instructions</p>
                 <div><ul>
-                    <li>Start with the number 20. For your first answer, subtract 5 from 20. Continue subtracting 5 from each new result until the screen prompts you to stop.</li>
-                    <li>Speak each answer aloud using single digit responses for best result (e.g. "One, Nine, Six" for 196) and press the "Submit" button to check your answer.</li>
-                    <li>You will have 10 seconds to speak your answer.</li>
-                    <li>You will then be asked to confirm the transcription.</li>
-                    <li>If your answer is incorrect, the screen will inform you and prompt you to restart from 20.</li>
-                    <li>Try to be as accurate and fast as possible while completing the task. Answers might take a few seconds to process.</li>
-                    <li>Press the Start Test button to begin.</li>
+                    <li>Begin with 20 and subtract 5. Say the result, then continue subtracting 5 from each new result.</li>
+                    <li>Say each digit separately. For example, say “one, nine, six” for 196.</li>
+                    <li>You have 10 seconds to say each answer.</li>
+                    <li>After speaking, press “Submit Answer.” Processing may take a few seconds.</li>
+                    <li>Review the transcription and confirm whether it is correct.</li>
+                    <li>If your answer is incorrect, you will be instructed to restart from 20.</li>
+                    <li>Continue until the screen says the test is complete. Then press “Task Complete.”</li>
+                    <li>Work as quickly and accurately as you can.</li>
+                    <li>Press “Start Test” when you are ready.</li>
                 </ul></div><br>
                 
                 <button id="startTestButton0" style="display:block;">Start Test</button><br>
@@ -135,18 +137,22 @@
                     <button id="noButton0" style="display:none;" disabled>No</button><br><br>
                     <button id="submitAnswerButton0" disabled>Submit Answer</button><br>
                 </div><br>
-                <button class="taskComplete" onclick="completeTask('practice_test')">Task Complete</button><br>
+                <button class="taskComplete" onclick="completeTask('practice_test', this)">Task Complete</button><br>
             </div><br>
             
             <button class="toggle nextButton" style="display:none;">Test 1</button>
             <div class="innerModule test-container nextDiv" id="test-container-1" style="display:none;">
                 <p>Instructions</p>
                 <div><ul>
-                    <li>Start with the number 1,009. For your first answer, subtract 13 from 1,009. Continue subtracting 13 from each new result until the screen prompts you to stop.</li>
-                    <li>Speak each answer aloud using single digit responses for best result (e.g. "One, Nine, Six" for 196) and press the "Submit" button to check your answer.</li>
-                    <li>If your answer is incorrect, the screen will inform you and prompt you to restart from 1,009.</li>
-                    <li>Try to be as accurate and fast as possible while completing the task. Answers might take a few seconds to process.</li>
-                    <li>Press the Start Test button to begin.</li>
+                    <li>Begin with 1,009 and subtract 13. Say the result, then continue subtracting 13 from each new result.</li>
+                    <li>Say each digit separately. For example, say “one, nine, six” for 196.</li>
+                    <li>You have 10 seconds to say each answer.</li>
+                    <li>After speaking, press “Submit Answer.” Processing may take a few seconds.</li>
+                    <li>Review the transcription and confirm whether it is correct.</li>
+                    <li>If your answer is incorrect, you will be instructed to restart from 1,009.</li>
+                    <li>Continue until the screen says the test is complete. Then press “Task Complete.”</li>
+                    <li>Work as quickly and accurately as you can.</li>
+                    <li>Press “Start Test” when you are ready.</li>
                 </ul></div><br>
                 
                 <button id="startTestButton1" style="display:block;">Start Test</button><br>
@@ -161,7 +167,7 @@
                     <button id="submitAnswerButton1" disabled>Submit Answer</button><br>
                     
                 </div><br>
-                <button class="taskComplete" id="test1Complete" onclick="completeTask('test_1')">Task Complete</button><br>
+                <button class="taskComplete" id="test1Complete" onclick="completeTask('test_1', this)">Task Complete</button><br>
             </div><br>
 
             <button class="toggle nextButton" style="display:none;">SART Task 2</button>
@@ -171,7 +177,7 @@
                     <li>Complete the tasks as directed.</li>
                     <li>Press "Task Complete" when you have finished the task.</li>
                 </ul>
-                <button class="taskComplete" id="sart2Complete" onclick="completeTask('sart_2')">Task Complete</button>
+                <button class="taskComplete" id="sart2Complete" onclick="completeTask('sart_2', this)">Task Complete</button>
                 
             </div><br>
 
@@ -180,7 +186,7 @@
             <div class="innerModule nextDiv" id="surveyIpr1Div" style="display:none;">
                 <p>Please fill out this form.</p>
                 <div id="ipr1Div" style="display:block;"></div><br>
-                <button class="taskComplete" id="ipr1Complete" onclick="completeTask('survey_ipr1'); setSARTMessage('sartComplete2');">Task Complete</button>
+                <button class="taskComplete" id="ipr1Complete" onclick="completeTask('survey_ipr1', this); setSARTMessage('sartComplete2');">Task Complete</button>
             </div><br>
 
             <p id="sartComplete2" style="display:none; color:red;">Further instructions will be provided by the experimenter shortly</p>
@@ -192,14 +198,14 @@
                     <li>Complete the tasks as directed.</li>
                     <li>Press "Task Complete" when you have finished the task.</li>
                 </ul>
-                <button class="taskComplete" id="sart3Complete" onclick="completeTask('sart_3')">Task Complete</button>
+                <button class="taskComplete" id="sart3Complete" onclick="completeTask('sart_3', this)">Task Complete</button>
             </div><br>
 
             <button class="toggle nextButton" id="surveyIpr2Button" style="display:none;">Survey</button>
             <div class="innerModule nextDiv" id="surveyIpr2Div" style="display:none;">
                 <p>Please fill out this form.</p>
                 <div id="ipr2Div" style="display:block;"></div><br>
-                <button class="taskComplete" id="ipr2Complete" onclick="completeTask('survey_ipr2')">Task Complete</button>
+                <button class="taskComplete" id="ipr2Complete" onclick="completeTask('survey_ipr2', this)">Task Complete</button>
             </div><br>
 
             <button class="toggle nextButton" style="display:none;">Break 1</button>
@@ -209,7 +215,7 @@
                     <source src="{{ url_for('video', filename='Video1.mp4') }}" type="video/mp4">
                 </video><br>
                 <p id="restMessage1"></p>
-                <button id='break1Complete' class="taskComplete" onclick="completeTask('break_1')">Break Complete</button>
+                <button id='break1Complete' class="taskComplete" onclick="completeTask('break_1', this)">Break Complete</button>
             </div><br>
 
             <button class="toggle nextButton" style="display:none;">SART Task 4</button>
@@ -219,18 +225,22 @@
                     <li>Complete the tasks as directed.</li>
                     <li>Press "Task Complete" when you have finished the task.</li>
                 </ul>
-                <button class="taskComplete" onclick="completeTask('sart_4')">Task Complete</button>
+                <button class="taskComplete" onclick="completeTask('sart_4', this)">Task Complete</button>
             </div><br>
 
             <button class="toggle nextButton" style="display:none;">Test 2</button>
             <div class="innerModule nextDiv test-container" id="test-container-2" style="display:none;">
                 <p>Instructions</p>
                 <div><ul>
-                    <li>Start with the number 1,059. For your first answer, subtract 17 from 1,059. Continue subtracting 17 from each new result until the screen prompts you to stop.</li>
-                    <li>Speak each answer aloud using single digit responses for best result (e.g. "One, Nine, Six" for 196) and press the "Submit" button to check your answer.</li>
-                    <li>If your answer is incorrect, the screen will inform you and prompt you to restart from 1,059.</li>
-                    <li>Try to be as accurate and fast as possible while completing the task. Answers might take a few seconds to process.</li>
-                    <li>Press the Start Test button to begin.</li>
+                    <li>Begin with 1,059 and subtract 17. Say the result, then continue subtracting 17 from each new result.</li>
+                    <li>Say each digit separately. For example, say “one, nine, six” for 196.</li>
+                    <li>You have 10 seconds to say each answer.</li>
+                    <li>After speaking, press “Submit Answer.” Processing may take a few seconds.</li>
+                    <li>Review the transcription and confirm whether it is correct.</li>
+                    <li>If your answer is incorrect, you will be instructed to restart from 1,059.</li>
+                    <li>Continue until the screen says the test is complete. Then press “Task Complete.”</li>
+                    <li>Work as quickly and accurately as you can.</li>
+                    <li>Press “Start Test” when you are ready.</li>
                 </ul></div><br>
                 
                 <button id="startTestButton2" style="display:block;">Start Test</button><br>
@@ -244,7 +254,7 @@
                     <button id="noButton2" style="display:none;" disabled>No</button><br><br>
                     <button id="submitAnswerButton2" disabled>Submit Answer</button><br>
                 </div><br>
-                <button id='test2Complete' class="taskComplete" onclick="completeTask('test_2')">Task Complete</button><br>
+                <button id='test2Complete' class="taskComplete" onclick="completeTask('test_2', this)">Task Complete</button><br>
             </div><br>
 
             <button class="toggle nextButton" style="display:none;">SART Task 5</button>
@@ -254,7 +264,7 @@
                     <li>Complete the tasks as directed.</li>
                     <li>Press "Task Complete" when you have finished the task.</li>
                 </ul>
-                <button class="taskComplete" id="sart5Complete" onclick="completeTask('sart_5')">Task Complete</button>
+                <button class="taskComplete" id="sart5Complete" onclick="completeTask('sart_5', this)">Task Complete</button>
             </div><br>
     
             
@@ -262,7 +272,7 @@
             <div class="innerModule nextDiv" id="surveyIpr3Div" style="display:none;">
                 <p>Please fill out this form.</p>
                 <div id="ipr3Div" style="display:block;"></div><br>
-                <button class="taskComplete" id="ipr3Complete" onclick="completeTask('survey_ipr3'); setSARTMessage('sartComplete5');">Task Complete</button>
+                <button class="taskComplete" id="ipr3Complete" onclick="completeTask('survey_ipr3', this); setSARTMessage('sartComplete5');">Task Complete</button>
             </div><br>
             
             <p id="sartComplete5" style="display:none; color:red;">Further instructions will be provided by the experimenter shortly</p>
@@ -274,14 +284,14 @@
                     <li>Complete the tasks as directed.</li>
                     <li>Press "Task Complete" when you have finished the task.</li>
                 </ul>
-                <button class="taskComplete" id="sart6Complete" onclick="completeTask('sart_6')">Task Complete</button>
+                <button class="taskComplete" id="sart6Complete" onclick="completeTask('sart_6', this)">Task Complete</button>
             </div><br>
 
             <button class="toggle nextButton" id="surveyIpr4Button" style="display:none;">Survey</button>
             <div class="innerModule nextDiv" id="surveyIpr4Div" style="display:none;">
                 <p>Please fill out this form.</p>
                 <div id="ipr4Div" style="display:block;"></div><br>
-                <button class="taskComplete" id="ipr4Complete" onclick="completeTask('survey_ipr4')">Task Complete</button>
+                <button class="taskComplete" id="ipr4Complete" onclick="completeTask('survey_ipr4', this)">Task Complete</button>
             </div><br>
 
             <button class="toggle nextButton" style="display:none">Break 2</button>
@@ -291,18 +301,18 @@
                     <source src="{{ url_for('video', filename='Video2.mp4') }}" type="video/mp4">
                 </video><br>
                 <p id="restMessage2"></p>
-                <button class="taskComplete" onclick="completeTask('break_2')">Break Complete</button>
+                <button class="taskComplete" onclick="completeTask('break_2', this)">Break Complete</button>
             </div>
         </div>
     </div><br>
-    <button class="toggle nextButton" style="display:none;">Post Test</button>
-    <div class="nextDiv" style="display:none;">
+    <button class="toggle nextButton" id="postTestButton" style="display:none;">Post Test</button>
+    <div class="nextDiv" id="postTestDiv" style="display:none;">
         <h2>Post Test</h2>
         <p>Please fill out the exit survey.</p>
         <div class="testModule" style="display:block;">
             <button class="toggle">Exit Survey</button>
             <div class="innerModule" id="exitSurveyDiv" style="display:none;"></div><br><br>
-            <button class="taskComplete" id="postTestComplete" onclick="completeTask('exit_survey')">Task Complete</button><br>
+            <button class="taskComplete" id="postTestComplete" onclick="completeTask('exit_survey', this)">Task Complete</button><br>
             <p id="completeMessage" style="display:none;">All tasks are complete. Please wait for further instructions.</p>
         </div>
     </div>
@@ -461,6 +471,11 @@
         startTestButton2.addEventListener('click', initTest2);
 
         document.addEventListener('DOMContentLoaded', function(){
+            setCurrentTask({
+                header: findTaskHeader(nameForm.closest('.innerModule')),
+                content: nameForm.closest('.innerModule')
+            });
+
             for (let i = 0; i < breakButtons.length; i++) {
                 breakButtons[i].addEventListener('click', function() {
                     breakWin = window.open('/break_page', '_blank', 'width=800, height=600');
@@ -498,12 +513,6 @@
             });
 
             serComplete.addEventListener('click', function() {
-                serComplete.disabled = true;
-                mainTasksDiv.style.display = 'block';
-
-                //TEST
-                document.querySelector('#mainTasksDiv .nextButton').style.display = 'block';
-                document.querySelector('#mainTasksDiv .nextDiv').style.display = 'block';
                 setEventMarker('sart_1');
             });
 
@@ -519,11 +528,6 @@
                 setEventMarker('sart_5');
             });
             
-            sart1Complete.addEventListener('click', function(){
-                practiceTestButton.style.display = 'block';
-                practiceTestContainer.style.display = 'block';
-                sart1Complete.disabled = true;
-            });
             sart2Complete.addEventListener('click', function(){
                 setEventMarker('survey_ipr1');
             });
@@ -551,36 +555,128 @@
             .catch(error => console.error('Error:', error));
         }
 
-        document.addEventListener('DOMContentLoaded', function() { 
-            postTestComplete.addEventListener('click', function(){
+        function findTaskHeader(taskContainer) {
+            let sibling = taskContainer.previousElementSibling;
+            while (sibling && !sibling.matches('button.toggle')) {
+                sibling = sibling.previousElementSibling;
+            }
+            return sibling;
+        }
+
+        function findAdjacentTask(taskContainer, taskId) {
+            if (taskId === 'ser_baseline') {
+                return {
+                    wrapper: mainTasksDiv,
+                    header: mainTasksDiv.querySelector('.nextButton'),
+                    content: mainTasksDiv.querySelector('.nextDiv')
+                };
+            }
+
+            if (taskId === 'break_2') {
+                return {
+                    header: document.getElementById('postTestButton'),
+                    content: document.getElementById('postTestDiv')
+                };
+            }
+
+            let sibling = taskContainer.nextElementSibling;
+            while (sibling && !sibling.matches('button.toggle')) {
+                sibling = sibling.nextElementSibling;
+            }
+            if (!sibling) {
+                return null;
+            }
+
+            let content = sibling.nextElementSibling;
+            while (content && !content.matches('div')) {
+                content = content.nextElementSibling;
+            }
+            return content ? { header: sibling, content: content } : null;
+        }
+
+        function clearTaskState(task) {
+            if (!task) return;
+            task.header?.classList.remove('task-current', 'task-completed');
+            task.content?.classList.remove('task-current', 'task-completed');
+        }
+
+        function setCurrentTask(task) {
+            document.querySelectorAll('.task-current').forEach(element => {
+                element.classList.remove('task-current');
+            });
+            if (!task) return;
+            task.header?.classList.add('task-current');
+            task.content?.classList.add('task-current');
+        }
+
+        function revealTask(task) {
+            if (!task) return;
+            if (task.wrapper) task.wrapper.style.display = 'block';
+            task.header.style.display = 'block';
+            task.content.style.display = 'block';
+            if (task.content.classList.contains('task-hold')) {
+                setCurrentTask(null);
+            } else {
+                setCurrentTask(task);
+            }
+        }
+
+        function addCompletionStatus(taskContainer, button, taskId) {
+            const status = document.createElement('div');
+            status.className = 'task-completion-status';
+            status.setAttribute('role', 'status');
+            status.textContent = '✓ Completed';
+
+            const reopenButton = document.createElement('button');
+            reopenButton.type = 'button';
+            reopenButton.className = 'reopen-task';
+            reopenButton.textContent = 'Undo completion';
+            reopenButton.addEventListener('click', function() {
+                reopenButton.disabled = true;
+                reopenTask(taskId)
+                    .then(() => {
+                        taskContainer.classList.remove('task-completed');
+                        findTaskHeader(taskContainer)?.classList.remove('task-completed');
+                        status.remove();
+                        button.disabled = false;
+                        if (taskId === 'exit_survey') {
+                            completeMessage.style.display = 'none';
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        reopenButton.disabled = false;
+                    });
+            });
+
+            status.appendChild(reopenButton);
+            button.insertAdjacentElement('afterend', status);
+            return status;
+        }
+
+        function markTaskCompleted(button, taskId) {
+            const taskContainer = button.closest('.innerModule, .nextDiv');
+            if (!taskContainer || taskContainer.classList.contains('task-completed')) {
+                return;
+            }
+
+            clearTaskState({
+                header: findTaskHeader(taskContainer),
+                content: taskContainer
+            });
+            taskContainer.classList.add('task-completed');
+            findTaskHeader(taskContainer)?.classList.add('task-completed');
+
+            const nextTask = findAdjacentTask(taskContainer, taskId);
+            addCompletionStatus(taskContainer, button, taskId);
+            if (nextTask && getComputedStyle(nextTask.content).display === 'none') {
+                revealTask(nextTask);
+            }
+
+            if (taskId === 'exit_survey') {
                 completeMessage.style.display = 'block';
-            });
-        });
-        
-        // document.querySelectorAll('.taskComplete').forEach(button => {
-        //     button.addEventListener('click', function() {
-        //         let nextButton = document.querySelector('.nextButton:not([style*="display:block"])');
-        //         let nextDiv = document.querySelector('.nextDiv:not([style*="display:block"])');
-
-        //         if (nextButton) nextButton.style.display = 'block';
-        //         if (nextDiv) nextDiv.style.display = 'block';
-        //         button.disabled = true; // Prevents multiple clicks
-        //     });
-        // });
-        document.querySelectorAll('.taskComplete').forEach(button => {
-            button.addEventListener('click', function() {
-                const buttons = document.querySelectorAll('.nextButton');
-                const divs = document.querySelectorAll('.nextDiv');
-
-                let nextButton = Array.from(buttons).find(btn => getComputedStyle(btn).display === 'none');
-                let nextDiv = Array.from(divs).find(div => getComputedStyle(div).display === 'none');
-
-                if (nextButton) nextButton.style.display = 'block';
-                if (nextDiv) nextDiv.style.display = 'block';
-
-                button.disabled = true;
-            });
-        });
+            }
+        }
 
         function submitPassword(expPwd, statusElement){
             const formData = new FormData(expPwd);
@@ -597,11 +693,19 @@
                     statusElement.style.display = 'block';
                 } else {
                     statusElement.style.display = 'none';
-                    let nextButton = document.querySelector('.nextButton:not([style*="display: block"])');
-                    let nextDiv = document.querySelector('.nextDiv:not([style*="display: block"])');
-
-                    if (nextButton) nextButton.style.display = 'block';
-                    if (nextDiv) nextDiv.style.display = 'block';
+                    const holdContainer = expPwd.closest('.innerModule');
+                    const holdHeader = findTaskHeader(holdContainer);
+                    holdContainer.classList.remove('task-hold');
+                    holdHeader?.classList.remove('task-hold');
+                    holdContainer.classList.add('task-completed');
+                    holdHeader?.classList.add('task-completed');
+                    expPwd.querySelector('button[type="submit"]').disabled = true;
+                    const approvalStatus = document.createElement('div');
+                    approvalStatus.className = 'task-completion-status';
+                    approvalStatus.setAttribute('role', 'status');
+                    approvalStatus.textContent = '✓ Experimenter approved';
+                    holdContainer.appendChild(approvalStatus);
+                    revealTask(findAdjacentTask(expPwd.closest('.innerModule'), 'password'));
                 }
             })
             .catch((error) => {
@@ -639,6 +743,21 @@
                         
                         survey1Button.style.display = 'block';
                         survey1Div.style.display = 'block';
+                        const participantInfoContainer = nameForm.closest('.innerModule');
+                        const participantInfoHeader = findTaskHeader(participantInfoContainer);
+                        clearTaskState({
+                            header: participantInfoHeader,
+                            content: participantInfoContainer
+                        });
+                        participantInfoContainer.classList.add('task-completed');
+                        participantInfoHeader?.classList.add('task-completed');
+                        const participantInfoStatus = document.createElement('div');
+                        participantInfoStatus.className = 'task-completion-status';
+                        participantInfoStatus.setAttribute('role', 'status');
+                        participantInfoStatus.textContent = '✓ Completed';
+                        participantInfoContainer.appendChild(participantInfoStatus);
+                        submitButton.disabled = true;
+                        setCurrentTask({ header: survey1Button, content: survey1Div });
                         notification1.style.display = 'block';
                         errorNotification1.style.display = 'none';
 
@@ -734,7 +853,7 @@
                         submitAnswer.disabled = true;
                         submitAnswer.style.display = 'none';
                         // status.innerText = data.message;
-                        questionContainer.innerText = "No more questions. Please click “Task Complete” to proceed to the next step.."
+                        questionContainer.innerText = "No more questions. Press “Task Complete” to proceed to the next step."
                     } else {
                         questionContainer.innerText = data.question;
                         console.log(data.question);
