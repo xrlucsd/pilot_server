@@ -493,9 +493,10 @@ def set_current_test() -> Response:
         test_manager.current_test_index = int(test_number)
         test_manager.current_question_index = 0
         
-        # Reset transcription manager between tests to clear accumulated state
+        # Clear stale results when Whisper is idle. A timed-out transcription
+        # must not prevent the next MAT from loading.
         if int(test_number) > 0:
-            transcription_manager.reset()
+            transcription_manager.reset(lock_timeout=0.1)
         
         print(f"Test set to {test_number}.")
         print(f"Current Question Index: {test_manager.current_question_index}")
@@ -1424,30 +1425,7 @@ def generate_timestamps(start_time_dt, segment_duration=20, output_folder="tmp/"
 def transcribe_audio(file, timeout_seconds=15) -> str:
     global transcription_manager
 
-    result_holder = {}
-
-    def run_transcription():
-        try:
-            result_holder['result'] = transcription_manager.transcribe(file)
-        except Exception as e:
-            result_holder['error'] = e
-
-    # A daemon thread lets the request return if Whisper stalls. A
-    # ThreadPoolExecutor context manager waits for its worker during shutdown,
-    # which previously made the timeout ineffective.
-    transcription_thread = threading.Thread(target=run_transcription, daemon=True)
-    transcription_thread.start()
-    transcription_thread.join(timeout_seconds)
-
-    if transcription_thread.is_alive():
-        print(f"Transcription timed out after {timeout_seconds} seconds for file: {file}")
-        return "Sorry, I could not understand the response."
-
-    if 'error' in result_holder:
-        print(f"An error occurred during transcription: {str(result_holder['error'])}")
-        return "Sorry, something went wrong with the transcription."
-
-    result = result_holder.get('result')
+    result = transcription_manager.transcribe(file, timeout_seconds=timeout_seconds)
     return result if result is not None else "Sorry, I could not understand the response."
 
 def run_flask():

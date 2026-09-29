@@ -30,38 +30,40 @@ class TranscriptionManager:
         self.model = self.model.to("cpu")
         self.result = None
         self.lock = threading.Lock()
+        self.operation_lock = threading.Lock()
+        self.active_operation = None
 
     def switch_model(self, model_name):
         try:
-            self.model = whisper.load_model(model_name)
-            self.model = self.model.float()
-            self.model = self.model.to("cpu")
+            model = whisper.load_model(model_name)
+            model = model.float()
+            model = model.to("cpu")
+            with self.lock:
+                self.model = model
             print(f"Model switched to {model_name}.")
 
         except FileNotFoundError:
             print(f"Model {model_name} not found. Please ensure that the model is in the correct directory and that the model name is correct.")
 
-    def reset(self):
+    def reset(self, lock_timeout=0.1):
         """
-        Reset the transcription model to clear any cached state.
-        Useful between test sessions to prevent resource accumulation.
-        """
-        try:
-            with self.lock:
-                # Clear result
-                self.result = None
-                
-                # Reload model to clear any accumulated state
-                print("Resetting Whisper model...")
-                self.model = whisper.load_model("base")
-                self.model = self.model.float()
-                self.model = self.model.to("cpu")
-                print("Whisper model reset complete.")
-                
-        except Exception as e:
-            print(f"Error resetting Whisper model: {e}")
+        Clear the last result without waiting indefinitely for active inference.
 
-    def transcribe(self, audio_file):
+        Returns False when Whisper is busy so callers can continue without
+        accessing or replacing the shared model during transcription.
+        """
+        acquired = self.lock.acquire(timeout=lock_timeout)
+        if not acquired:
+            print("Whisper model is still busy; skipping reset.")
+            return False
+
+        try:
+            self.result = None
+            return True
+        finally:
+            self.lock.release()
+
+    def transcribe(self, audio_file, timeout_seconds=15):
         """
         Starts the transcription process for the given audio file.
         This method creates a new thread to handle the transcription of the provided
@@ -71,10 +73,28 @@ class TranscriptionManager:
         Returns:
             str: The transcription result of the audio file, or None if filtered out.
         """
+        with self.operation_lock:
+            if self.active_operation and self.active_operation["thread"].is_alive():
+                print("Whisper model is still processing a previous transcription.")
+                return None
+
+            operation = {"done": threading.Event(), "result": None}
+            operation["thread"] = threading.Thread(
+                target=self._run_transcription,
+                args=(audio_file, operation),
+                daemon=True,
+            )
+            self.active_operation = operation
+            operation["thread"].start()
+
+        if not operation["done"].wait(timeout_seconds):
+            print(f"Transcription timed out after {timeout_seconds} seconds for file: {audio_file}")
+            return None
+
+        return operation["result"]
+
+    def _run_transcription(self, audio_file, operation):
         try:
-            # Whisper model inference is not safe to run concurrently. If a
-            # timed-out request is still finishing in the background, later
-            # requests wait here instead of competing for the same model.
             with self.lock:
                 result = self.model.transcribe(
                     audio_file,
@@ -83,22 +103,14 @@ class TranscriptionManager:
                     logprob_threshold=-1.0,
                     condition_on_previous_text=False,
                 )
-            
+
             text = result["text"].strip()
-            
-            # Basic validation
-            if len(text) < 1:
-                return None
-                
-            # Filter likely hallucinations and non-English content
-            if self._is_likely_invalid(text):
-                return None
-                
-            return text
-            
+            if text and not self._is_likely_invalid(text):
+                operation["result"] = text
         except Exception as e:
             print(f"Transcription error: {e}")
-            return None
+        finally:
+            operation["done"].set()
 
     def _is_likely_invalid(self, text):
         """
