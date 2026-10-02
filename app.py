@@ -192,16 +192,25 @@ def set_event_marker():
 @app.route('/complete_task', methods=['POST'])
 def complete_task() -> Response:
     global update_message
-    task_id = request.json.get('task_id', '')
+    request_data = request.get_json(silent=True) or {}
+    task_id = request_data.get('task_id', '')
+    action = request_data.get('action', 'complete')
+
+    if not task_id or action not in {'complete', 'reopen'}:
+        return jsonify({'error': 'A task ID and valid action are required.'}), 400
+
+    is_completed = action == 'complete'
+    event_type = 'task_completed' if is_completed else 'task_reopened'
+    action_label = 'completed' if is_completed else 'reopened'
 
     update_message = {
-        'event_type': 'task_completed',
+        'event_type': event_type,
         'task_id': task_id,
-        'message': f'Task {task_id} completed.'
+        'message': f'Task {task_id} {action_label}.'
     }
     
     update_event.set()
-    return jsonify(success=True), 200
+    return jsonify(success=True, task_id=task_id, status=action_label), 200
 
 @app.route('/status_update', methods=['POST'])
 def status_update() -> Response:
