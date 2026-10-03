@@ -44,15 +44,32 @@
         <div id="errorNotification1" style="display:none; color: red;"></div>
     </div><br>
 
-    <button class=toggle>Subject Dashboard</button><br>
+    <div class="workflow-step workflow-step-toggle">
+        <button class="toggle workflow-step-trigger">Step 1 — Participant Information and Surveys</button>
+        <span id="workflow_step_1" class="workflow-status">○ Waiting</span>
+    </div><br>
     <div class="innerModule" style="display:block">
         <button id="launchSubjectGUI">Launch Subject Dashboard</button><br>
-        <p id="subject_info" style="display:none; color: green;">Subject has submitted the Information Form.</p>
-        <p id="survey_1" style="display:none; color: green;">Subject has submitted the Demographic Form.</p>
-        <p id="survey_2" style="display:none; color: green;">Subject has submitted the PSS-10 Form.</p>
+        <div class="workflow-subtasks">
+            <div class="workflow-subtask">
+                <span>Information Form</span>
+                <button id="subject_info" class="workflow-status workflow-status-manual step-one-status" data-task-id="subject_info" type="button" aria-pressed="false">○ Waiting</button>
+            </div>
+            <div class="workflow-subtask">
+                <span>Demographic Form</span>
+                <button id="survey_1" class="workflow-status workflow-status-manual step-one-status" data-task-id="survey_1" type="button" aria-pressed="false">○ Waiting</button>
+            </div>
+            <div class="workflow-subtask">
+                <span>PSS-10 Form</span>
+                <button id="survey_2" class="workflow-status workflow-status-manual step-one-status" data-task-id="survey_2" type="button" aria-pressed="false">○ Waiting</button>
+            </div>
+        </div>
     </div><br>
 
-    <button class="toggle">Device Setup</button><br>
+    <div class="workflow-step workflow-step-toggle">
+        <button class="toggle workflow-step-trigger">Step 2 — Device Setup</button>
+        <button id="workflow_step_2" class="workflow-status workflow-status-manual" data-task-id="workflow_step_2" type="button" aria-pressed="false">○ Waiting</button>
+    </div><br>
     <div class="innerModule" style="display:none;">
         <h3>Device Startup</h3>
         <button id="startEmotibitButton">Start EmotiBit</button><br>
@@ -61,13 +78,19 @@
         <p class="vernierStatus"></p>
     </div><br>
 
-    <button class="toggle">Biometrics Baseline</button><br>
+    <div class="workflow-step workflow-step-toggle">
+        <button class="toggle workflow-step-trigger">Step 3 — Baseline Data Collection</button>
+        <button id="workflow_step_3" class="workflow-status workflow-status-manual" data-task-id="workflow_step_3" type="button" aria-pressed="false">○ Waiting</button>
+    </div><br>
     <div class="innerModule" style="display:none;">
         <button id="startBiometricBaseline">Start Collecting Baseline</button>
         <p id="biometricStatusMessage"></p>
     </div><br>
 
-    <button class="toggle">Audio</button><br>
+    <div class="workflow-step workflow-step-toggle">
+        <button class="toggle workflow-step-trigger">Step 4a — AirPods and Audio Testing</button>
+        <button id="workflow_step_4a" class="workflow-status workflow-status-manual" data-task-id="workflow_step_4a" type="button" aria-pressed="false">○ Waiting</button>
+    </div><br>
     <div class="innerModule" style="display:none;">
         <button id="resetAudioButton">Reset Audio System</button>
         <p>Reset only if system audio crashes.</p>
@@ -78,32 +101,48 @@
 
     </div><br>
 
-    <p id="test_transcription" style="display:none; color:green;">Subject has completed the test transcription.</p>
-    <p id="ser_baseline" style="display:none; color:green;">Subject has completed the SER baseline task.</p>
+    <div class="workflow-step workflow-step-static">
+        <span>Step 4b — Test Transcription</span>
+        <span id="test_transcription" class="workflow-status" style="display:none;">Complete</span>
+    </div>
+    <div class="workflow-step workflow-step-static">
+        <span>Step 5 — Mood Q&amp;A (SER Baseline)</span>
+        <span id="ser_baseline" class="workflow-status" style="display:none;">Complete</span>
+    </div>
 
-    <button class="toggle">SART Task 1</button><br>
+    <button class="toggle workflow-step workflow-step-toggle">
+        <span>Step 6 — SART Task 1</span>
+        <span id="sart_1" class="workflow-status" style="display:none;">Complete</span>
+    </button><br>
     <div class="innerModule" style="display:none;">
         <p>Assist the subject with the first SART task.</p>
     </div><br>
-    <p id="sart_1" style="display:none; color:green;">Subject has completed the first SART task.</p>
+    <div class="workflow-step workflow-step-static">
+        <span>Step 7 — Practice MAT</span>
+        <span id="practice_test" class="workflow-status" style="display:none;">Complete</span>
+    </div>
+    <div class="workflow-step workflow-step-static">
+        <span>Step 8 — MAT 1</span>
+        <span id="test_1" class="workflow-status" style="display:none;">Complete</span>
+    </div>
 
-    <p id="practice_test" style="display:none; color:green;">Subject has completed the practice stress task.</p>
-    <p id="test_1" style="display:none; color:green;">Subject has completed the first stress task.</p>
-
-    <button class="toggle">SART Task 2</button><br>
+    <button class="toggle workflow-step workflow-step-toggle">
+        <span>Step 9 — SART Task 2</span>
+        <span id="sart_2" class="workflow-status" style="display:none;">Complete</span>
+    </button><br>
     <div class="innerModule" style="display:none;">
         <p>Assist the subject with the second SART task.</p>
     </div><br>
-    <p id="sart_2" style="display:none; color:green;">Subject has completed the second SART task.</p>
+    <button class="toggle workflow-step workflow-step-toggle">
+        <span>Step 10 — Personal Reactions 1</span>
+        <span id="survey_ipr1" class="workflow-status" style="display:none;">Complete</span>
+    </button><br>
+    <div class="innerModule" style="display:none;">
+        <aside id="step10Guidance" class="transition-notice" hidden>Personal Reactions 1 is complete. Next, escort the participant to Condition 1.</aside>
+    </div><br>
 
-    <p id="survey_ipr1" style="display:none; color: green;">Subject has submitted the first IPR task.</p>
-
-    <h2>Experimental Tasks</h2>
-    <button class="toggle">Begin Tasks</button><br>
-    <div class="testModule" style="display:none;">
-        <h3>Experimental Tasks</h3>
-        <!-- Task for continuous recording -->
-        <!-- <button class="toggle">Task 1 (General Recording)</button><br>
+    <!-- Task for continuous recording -->
+    <!-- <button class="toggle">Task 1 (General Recording)</button><br>
         <div class="innerModule" id='taskGenDiv1' style="display:none">
             <p><span class="required">IMPORTANT:</span> If General Recording is chosen, do NOT perform any other recording tasks while it is active.</p>
             <select onchange="updateCondition('taskGenDiv1', 'task_1')">
@@ -115,9 +154,15 @@
             </select><br><br>
             <button id="task_1_recording">Start Recording</button><br><br>
             <p id="recordingStatus1" style="display:none;">Please wait...</p>
-        </div><br> -->
+    </div><br> -->
 
-        <button class="toggle">Task 1</button><br>
+    <div class="workflow-step workflow-step-toggle condition-toggle">
+        <button class="toggle workflow-step-trigger">Step 11 — Condition 1: Room Task 1 and PRS Task 1</button>
+        <button id="workflow_step_11" class="workflow-status workflow-status-manual" data-task-id="workflow_step_11" type="button" aria-pressed="false">○ Waiting</button>
+    </div><br>
+    <div class="condition-group" style="display:none;">
+        <h3>Condition 1</h3>
+        <button class="toggle">Room Task 1</button><br>
         <div class="innerModule" id="taskDiv1" style="display:none">
             <select onchange="updateCondition('taskDiv1', 'task_1')">
                 <option value="no_condition" selected>Select Condition</option>
@@ -141,28 +186,50 @@
             <button id="startPRSTask1">Start Task</button><br>
             <!-- <p id="breakInstructions1" style="display:none;">After the PRS is complete, you will move with the subject back into the break room. They will then complete the IAT, Break 1, and Stress Task #2</p> -->
         </div><br>
+    </div><br>
 
-        <button class="toggle">SART Task 3</button><br>
-        <div class="innerModule" style="display:none;">
-            <p>Assist the subject with the third SART task.</p>
-        </div><br>
-        <p id="sart_3" style="display:none; color:green;">Subject has completed the third SART task.</p>
-        <p id="survey_ipr2" style="display:none; color: green;">Subject has submitted the second IPR task.</p>
-        <p id="break_1" style="display:none; color:green;">Subject has completed the first break.</p>
+    <button class="toggle workflow-step workflow-step-toggle">
+        <span>Step 12 — SART Task 3</span>
+        <span id="sart_3" class="workflow-status" style="display:none;">Complete</span>
+    </button><br>
+    <div class="innerModule" style="display:none;">
+        <p>Assist the subject with the third SART task.</p>
+    </div><br>
+    <div class="workflow-step workflow-step-static">
+        <span>Step 13 — Personal Reactions 2</span>
+        <span id="survey_ipr2" class="workflow-status" style="display:none;">Complete</span>
+    </div>
+    <div class="workflow-step workflow-step-static">
+        <span>Step 14 — Break 1</span>
+        <span id="break_1" class="workflow-status" style="display:none;">Complete</span>
+    </div>
 
-        <button class="toggle">SART Task 4</button><br>
-        <div class="innerModule" style="display:none;">
-            <p>Assist the subject with the fourth SART task.</p>
-        </div><br>
-        <p id="sart_4" style="display:none; color:green;">Subject has completed the fourth SART task.</p>
-        <p id="test_2" style="display:none; color:green;">Subject has completed the second stress task.</p>
+    <button class="toggle workflow-step workflow-step-toggle">
+        <span>Step 15 — SART Task 4</span>
+        <span id="sart_4" class="workflow-status" style="display:none;">Complete</span>
+    </button><br>
+    <div class="innerModule" style="display:none;">
+        <p>Assist the subject with the fourth SART task.</p>
+    </div><br>
+    <div class="workflow-step workflow-step-static">
+        <span>Step 16 — MAT 2</span>
+        <span id="test_2" class="workflow-status" style="display:none;">Complete</span>
+    </div>
 
-        <button class="toggle">SART Task 5</button><br>
-        <div class="innerModule" style="display:none;">
-            <p>Assist the subject with the fifth SART task.</p>
-        </div><br>
-        <p id="sart_5" style="display:none; color:green;">Subject has completed the fifth SART task.</p>
-        <p id="survey_ipr3" style="display:none; color: green;">Subject has submitted the third IPR task.</p>
+    <button class="toggle workflow-step workflow-step-toggle">
+        <span>Step 17 — SART Task 5</span>
+        <span id="sart_5" class="workflow-status" style="display:none;">Complete</span>
+    </button><br>
+    <div class="innerModule" style="display:none;">
+        <p>Assist the subject with the fifth SART task.</p>
+    </div><br>
+    <button class="toggle workflow-step workflow-step-toggle">
+        <span>Step 18 — Personal Reactions 3</span>
+        <span id="survey_ipr3" class="workflow-status" style="display:none;">Complete</span>
+    </button><br>
+    <div class="innerModule" style="display:none;">
+        <aside id="step18Guidance" class="transition-notice" hidden>Personal Reactions 3 is complete. Next, escort the participant to Condition 2.</aside>
+    </div><br>
 
         <!-- <button class="toggle">Task 2 (General Recording)</button><br>
         <div class="innerModule" id="taskGenDiv2" style="display:none">
@@ -179,7 +246,13 @@
             <p id="recordingStatus2" style="display:none;">Please wait...</p>
         </div><br> -->
 
-        <button class="toggle" id="taskButton2">Task 2</button><br>
+    <div class="workflow-step workflow-step-toggle condition-toggle">
+        <button class="toggle workflow-step-trigger">Step 19 — Condition 2: Room Task 2 and PRS Task 2</button>
+        <button id="workflow_step_19" class="workflow-status workflow-status-manual" data-task-id="workflow_step_19" type="button" aria-pressed="false">○ Waiting</button>
+    </div><br>
+    <div class="condition-group" style="display:none;">
+        <h3>Condition 2</h3>
+        <button class="toggle" id="taskButton2">Room Task 2</button><br>
         <div class="innerModule" id="taskDiv2" style="display:none">
             <select onchange="updateCondition('taskDiv2', 'task_2')">
                 <option value="no_condition" selected>Select an option</option>
@@ -204,24 +277,35 @@
             <button id="startPRSTask2">Start Task</button><br>
             <!-- <p id="breakInstructions2" style="display:none;">After the PRS is complete, you will move with the subject back into the break room. They will then complete the IAT #2 and Break 2</p> -->
         </div><br>
+    </div><br>
 
-        <button class="toggle">SART Task 6</button><br>
-        <div class="innerModule" style="display:none;">
-            <p>Assist the subject with the sixth SART task.</p>
-        </div><br>
-        <p id="sart_6" style="display:none; color:green;">Subject has completed the sixth SART task.</p>
-        <p id="survey_ipr4" style="display:none; color: green;">Subject has submitted the fourth IPR task.</p>
-        <p id="break_2" style="display:none; color:green;">Subject has completed the second break.</p>
+    <button class="toggle workflow-step workflow-step-toggle">
+        <span>Step 20 — SART Task 6</span>
+        <span id="sart_6" class="workflow-status" style="display:none;">Complete</span>
+    </button><br>
+    <div class="innerModule" style="display:none;">
+        <p>Assist the subject with the sixth SART task.</p>
+    </div><br>
+    <div class="workflow-step workflow-step-static">
+        <span>Step 21 — Personal Reactions 4</span>
+        <span id="survey_ipr4" class="workflow-status" style="display:none;">Complete</span>
+    </div>
+    <div class="workflow-step workflow-step-static">
+        <span>Step 22 — Break 2</span>
+        <span id="break_2" class="workflow-status" style="display:none;">Complete</span>
     </div>
 
+    <button class="toggle workflow-step workflow-step-toggle">
+        <span>Step 23 — Exit Survey</span>
+        <span id="exit_survey" class="workflow-status" style="display:none;">Complete</span>
+    </button><br>
+    <div class="innerModule" style="display:none;">
+        <h4>Exit Survey</h4>
+    </div><br>
+
     <h2>Post-Test</h2>
-    <button class="toggle">Post-test Tasks</button>
+    <button class="toggle">Post-test Tools</button>
     <div class="testModule" style="display:none;">
-        <button class="toggle">Exit Survey</button><br>
-        <div class="innerModule" style="display:none;">
-            <h4>Exit Survey</h4>
-            <p id="exit_survey" style="display:none; color:green;">Subject has completed the exit survey.</p>
-        </div><br>
        
         <button class="toggle">Stop Devices</button><br>
         <div class="innerModule" style="display:none;">
@@ -413,21 +497,87 @@
         const startSARTButtons = document.querySelectorAll('.SARTButton');
         
         const eventSource = new EventSource('/stream');
+
+        function setWorkflowStatus(taskId, isComplete) {
+            const taskStatus = document.getElementById(taskId);
+            if (!taskStatus) return;
+
+            if (taskStatus.classList.contains('workflow-status')) {
+                taskStatus.classList.toggle('is-complete', isComplete);
+                taskStatus.textContent = isComplete ? '✓ Complete' : '○ Waiting';
+                if (taskStatus.classList.contains('workflow-status-manual')) {
+                    taskStatus.setAttribute('aria-pressed', String(isComplete));
+                }
+                if (taskStatus.classList.contains('step-one-status')) {
+                    updateStepOneStatus();
+                }
+                updateConditionTransition(taskId, isComplete);
+                updateCurrentWorkflowStep();
+                return;
+            }
+
+            taskStatus.style.display = isComplete ? 'block' : 'none';
+        }
+
+        function updateConditionTransition(taskId, isComplete) {
+            const transitionByTask = {
+                survey_ipr1: document.getElementById('step10Guidance'),
+                survey_ipr3: document.getElementById('step18Guidance')
+            };
+            const transition = transitionByTask[taskId];
+            if (transition) {
+                transition.hidden = !isComplete;
+                const panel = transition.closest('.innerModule');
+                panel.style.display = isComplete ? 'block' : 'none';
+
+                let workflowStep = panel.previousElementSibling;
+                while (workflowStep && !workflowStep.classList.contains('workflow-step')) {
+                    workflowStep = workflowStep.previousElementSibling;
+                }
+                if (workflowStep) {
+                    workflowStep.setAttribute('aria-expanded', String(isComplete));
+                    workflowStep.querySelector('.toggle')?.setAttribute('aria-expanded', String(isComplete));
+                }
+            }
+        }
+
+        function updateCurrentWorkflowStep() {
+            const workflowSteps = Array.from(document.querySelectorAll('.workflow-step'));
+            let currentStepFound = false;
+
+            workflowSteps.forEach(step => {
+                const status = step.querySelector('.workflow-status');
+                const isCurrent = !currentStepFound && status && !status.classList.contains('is-complete');
+                step.classList.toggle('workflow-current', isCurrent);
+                if (isCurrent) {
+                    step.setAttribute('aria-current', 'step');
+                    currentStepFound = true;
+                } else {
+                    step.removeAttribute('aria-current');
+                }
+            });
+        }
+
+        function updateStepOneStatus() {
+            const formStatuses = Array.from(document.querySelectorAll('.step-one-status'));
+            const allComplete = formStatuses.length === 3 && formStatuses.every(status => {
+                return status.classList.contains('is-complete');
+            });
+            const stepStatus = document.getElementById('workflow_step_1');
+            stepStatus.classList.toggle('is-complete', allComplete);
+            stepStatus.textContent = allComplete ? '✓ Complete' : '○ Waiting';
+            updateCurrentWorkflowStep();
+        }
+
         eventSource.onmessage = function(event) {
             const data = JSON.parse(event.data);
             console.log("Update received:", data);
             if (data.event_type === 'task_completed' && data.task_id) {
                 console.log("Task completed:", data.message);
-                const taskStatusDiv = document.getElementById(data.task_id);
-                if (taskStatusDiv) {
-                    taskStatusDiv.style.display = "block";
-                }
+                setWorkflowStatus(data.task_id, true);
             } else if (data.event_type === 'task_reopened' && data.task_id) {
                 console.log("Task reopened:", data.message);
-                const taskStatusDiv = document.getElementById(data.task_id);
-                if (taskStatusDiv) {
-                    taskStatusDiv.style.display = "none";
-                }
+                setWorkflowStatus(data.task_id, false);
             } else if (data.event_type === 'status_update') {
                 console.log("Status update:", data.message);
             } else if (data.event_type === 'error') {
@@ -437,6 +587,36 @@
         };
 
         document.addEventListener('DOMContentLoaded', function(){
+            document.querySelectorAll('.workflow-status').forEach(status => {
+                status.textContent = '○ Waiting';
+            });
+            updateStepOneStatus();
+            updateCurrentWorkflowStep();
+
+            document.querySelectorAll('.workflow-status-manual').forEach(status => {
+                status.addEventListener('click', function() {
+                    const isComplete = this.classList.contains('is-complete');
+                    const action = isComplete ? 'reopen' : 'complete';
+                    this.disabled = true;
+
+                    fetch('/complete_task', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ task_id: this.dataset.taskId, action: action })
+                    })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`Unable to ${action} workflow step (${response.status})`);
+                        }
+                        setWorkflowStatus(this.dataset.taskId, !isComplete);
+                    })
+                    .catch(error => console.error('Error:', error))
+                    .finally(() => {
+                        this.disabled = false;
+                    });
+                });
+            });
+
             resetAudioButton.addEventListener('click', function(){
                 let audioStatus = document.getElementById('audioStatus');
                 fetch('/reset_audio', {
