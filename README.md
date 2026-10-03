@@ -2,6 +2,8 @@
 
 ## A command center for running all applications during experiment
 
+This is the active XR Lab-maintained repository.
+
 **Installation**
 
 **NOTE:** The best way to install ffmpeg and Portaudio on Mac is with HomeBrew. 
