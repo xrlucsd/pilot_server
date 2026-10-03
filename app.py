@@ -56,6 +56,15 @@ room_workflow_state = {
     'audio_id': None,
     'message': 'Room task has not started.',
 }
+prs_workflow_lock = threading.Lock()
+prs_workflow_state = {
+    'run_id': None,
+    'task_id': None,
+    'condition': None,
+    'phase': 'not_started',
+    'audio_id': None,
+    'message': 'PRS task has not started.',
+}
 
 ##################################################################
 ## Routes 
@@ -274,6 +283,47 @@ def room_workflow_status() -> Response:
         update_message = {
             'event_type': 'room_workflow_state',
             'room_state': copy.deepcopy(room_workflow_state),
+        }
+
+    update_event.set()
+    return jsonify(next_state), 200
+
+@app.route('/prs_workflow_state', methods=['GET', 'POST'])
+def prs_workflow_status() -> Response:
+    global prs_workflow_state, update_message
+
+    if request.method == 'GET':
+        with prs_workflow_lock:
+            return jsonify(copy.deepcopy(prs_workflow_state)), 200
+
+    request_data = request.get_json(silent=True) or {}
+    run_id = request_data.get('run_id')
+    task_id = request_data.get('task_id')
+    phase = request_data.get('phase')
+    takeover = request_data.get('takeover') is True
+    valid_task_ids = {'prs_1', 'prs_2'}
+    valid_phases = {'not_started', 'playing', 'recording', 'waiting_for_next_task'}
+
+    if not isinstance(run_id, str) or not run_id or task_id not in valid_task_ids or phase not in valid_phases:
+        return jsonify({'error': 'A PRS run ID, valid task ID, and valid phase are required.'}), 400
+
+    next_state = {
+        'run_id': run_id,
+        'task_id': task_id,
+        'condition': request_data.get('condition'),
+        'phase': phase,
+        'audio_id': request_data.get('audio_id'),
+        'message': request_data.get('message', ''),
+    }
+
+    with prs_workflow_lock:
+        current_run_id = prs_workflow_state.get('run_id')
+        if current_run_id and next_state['run_id'] != current_run_id and not takeover:
+            return jsonify({'error': 'This PRS task window is no longer active.'}), 409
+        prs_workflow_state = next_state
+        update_message = {
+            'event_type': 'prs_workflow_state',
+            'prs_state': copy.deepcopy(prs_workflow_state),
         }
 
     update_event.set()
@@ -1109,6 +1159,21 @@ def prs():
     # Exclude both intro and wait_message from the randomized PRS audio files
     prs_audio_files = [f for f in os.listdir(AUDIO_DIR) if f.endswith('.mp3') and f != intro and f != wait_message]
     random.shuffle(prs_audio_files)
+    transcripts = {
+        intro: 'For the next section of the experiment, we will be asking you to rate the extent to which a given statement describes your experience in this room. The scale will be from 0 to 6. An answer of 0 means “Not at all,” and an answer of 6 means “Completely.” Then you will provide a reason for each rating you provide. For this section, you will have 20 seconds to speak your rating and a justification after each statement. You will hear one beep after each statement, indicating that you can begin talking. You will hear two beeps when you have five seconds left to finish your answer. As a reminder, you will answer with a number from 0 to 6, with 0 being “Not at all,” and 6 being “Completely.” Please provide a brief explanation for your answer after each question. The statements will begin now.',
+        'PRS-SHORT-1-Fascinating.mp3': 'This place is fascinating.',
+        'PRS-SHORT-2-InterestingThings.mp3': 'My attention is drawn to many interesting things.',
+        'PRS-SHORT-3-HardToBeBored.mp3': 'It is hard to be bored in places like this.',
+        'PRS-SHORT-4-RefugeNuisances.mp3': 'This place is a refuge from nuisances.',
+        'PRS-SHORT-5-DemandAttention.mp3': 'I like to go to places like this to get away from things that usually demand my attention.',
+        'PRS-SHORT-6-GetAway.mp3': 'To stop thinking about the things that I must get done, I like to go to places like this.',
+        'PRS-SHORT-7-ClearOrder.mp3': 'There is a clear order in the physical arrangement of this place.',
+        'PRS-SHORT-8-Organized.mp3': 'It is easy to see how things are organized here.',
+        'PRS-SHORT-9-ProperPlace.mp3': 'Everything seems to have its proper place here.',
+        'PRS-SHORT-10-Exploration.mp3': 'This place is large enough to allow exploration in many directions.',
+        'PRS-SHORT-11-Boundaries.mp3': 'There are a few boundaries to limit my possibility for moving about here.',
+        wait_message: 'Please wait for further instructions.',
+    }
     
     html_template = r"""
     <!DOCTYPE html>
@@ -1129,142 +1194,323 @@ def prs():
             <li>After each question, you can take as much time as you need to think about it before speaking your response aloud. Then, you will provide a reason for each rating you provide.</li> 
             <li>The statements will begin now. As a reminder, you will answer with a number from 0 to 6, with 0 being "Not at all" and 6 being "Completely".</li>
             <li>Please provide a brief explanation for your answer after each question.</li>
-        </ul><br>
-        <div id="intro">
+            <li>Press play on the introduction. Each statement and recording advances automatically.</li>
+            <li>Use an individual audio control only when a statement needs to be replayed.</li>
+        </ul>
+        <aside id="prs-sequence-notice" class="prs-sequence-notice" role="status" aria-live="polite">Start the introduction audio when the participant is ready.</aside>
+        <section id="intro" class="prs-audio-step">
             <h3>Introduction</h3>
             <audio id="intro-audio-player" controls>
                 <source src="{{ url_for('static', filename='prs_audio/' + intro) }}" type="audio/mpeg">
                 Your browser does not support the audio element.
-            </audio><br>
-        </div><br>
-        
-        <!-- Wait message audio (hidden, will be played programmatically) -->
-        <audio id="wait-message-audio" style="display: none;">
-            <source src="{{ url_for('static', filename='prs_audio/' + wait_message) }}" type="audio/mpeg">
-            Your browser does not support the audio element.
-        </audio>
+            </audio>
+            <p class="audio-transcript"><strong>Transcript:</strong> {{ transcripts[intro] }}</p>
+            <div class="room-step-status">
+                <button class="prs-step-completion" data-step-index="0" type="button" aria-pressed="false">○ Incomplete</button>
+                <p class="prs-step-detail" id="intro-status" role="status">Not started.</p>
+            </div>
+        </section>
         
         <div id="container">
             {% for audio in audio_files %}
-            <div class="audio-container">
-                <audio controls data-audio-index="{{ loop.index }}">
+            <section class="prs-audio-step" data-prs-step-index="{{ loop.index }}">
+                <h3>Statement {{ loop.index }}</h3>
+                <audio controls data-audio-index="{{ loop.index }}" data-audio-name="{{ audio }}">
                     <source src="{{ url_for('static', filename='prs_audio/' + audio) }}" type="audio/mpeg">
                     Your browser does not support the audio element.
                 </audio>
-                <div class="recording-status" id="audio{{ loop.index }}-recording-status"></div>
-            </div>
+                <p class="audio-transcript"><strong>Transcript:</strong> {{ transcripts[audio] }}</p>
+                <div class="room-step-status">
+                    <button class="prs-step-completion" data-step-index="{{ loop.index }}" type="button" aria-pressed="false">○ Incomplete</button>
+                    <p class="prs-step-detail recording-status" id="audio{{ loop.index }}-recording-status" role="status">Not started.</p>
+                </div>
+            </section>
             {% endfor %}
         </div>
+        <section class="prs-audio-step" id="wait-message-section">
+            <h3>Wait message</h3>
+            <audio id="wait-message-audio" controls>
+                <source src="{{ url_for('static', filename='prs_audio/' + wait_message) }}" type="audio/mpeg">
+                Your browser does not support the audio element.
+            </audio>
+            <p class="audio-transcript"><strong>Transcript:</strong> {{ transcripts[wait_message] }}</p>
+            <div class="room-step-status">
+                <button class="prs-step-completion" data-step-index="{{ audio_files|length + 1 }}" type="button" aria-pressed="false">○ Incomplete</button>
+                <p class="prs-step-detail" id="wait-message-status" role="status">Not started.</p>
+            </div>
+        </section>
         <script>
             document.addEventListener("DOMContentLoaded", function () {
                 const introAudio = document.getElementById("intro-audio-player");
                 const waitMessageAudio = document.getElementById("wait-message-audio");
-                const acontainer = document.getElementById("container");
-                let audioElements = Array.from(document.querySelectorAll("audio[data-audio-index]"));
+                const sequenceNotice = document.getElementById("prs-sequence-notice");
+                const introStatus = document.getElementById("intro-status");
+                const waitStatus = document.getElementById("wait-message-status");
+                const audioElements = Array.from(document.querySelectorAll("audio[data-audio-index]"));
+                const completionButtons = Array.from(document.querySelectorAll(".prs-step-completion"));
+                const allPlayers = [introAudio, ...audioElements, waitMessageAudio];
+                const runId = crypto.randomUUID();
                 let currentIndex = 0;
-
-                function shuffleArray(array) {
-                    for (let i = array.length - 1; i > 0; i--) {
-                        const j = Math.floor(Math.random() * (i + 1));
-                        [array[i], array[j]] = [array[j], array[i]];
-                    }
-                }
-                shuffleArray(audioElements);
-                audioElements.forEach(container => {
-                    container.style.display = "block";
-                    acontainer.append(container);
-                });
-                
+                let activeRecording = null;
+                let pendingTimeouts = [];
+                let pendingIntervals = [];
+                let sequenceVersion = 0;
                 const eventMarker = localStorage.getItem('currentEventMarker');
                 const condition = localStorage.getItem('currentCondition');
+
+                const hasValidContext = eventMarker && ['prs_1', 'prs_2'].includes(eventMarker) && condition && condition !== 'null' && condition !== 'undefined' && condition !== 'no_condition';
+                if (!hasValidContext) {
+                    alert('No condition found for task. Please go back to the main interface and select a condition.');
+                    allPlayers.forEach(player => player.disabled = true);
+                    publishPrsState('not_started', null, 'Select a condition before starting this PRS task.', true);
+                    return;
+                }
 
                 setEventMarker(eventMarker);
                 setCondition(condition);
 
-                function startRecordingForSegment(audioElement, baseName) {
-                    const statusElement = audioElement.parentElement.querySelector(".recording-status");
-                    statusElement.innerText = `Recording started for ${baseName}...`;
+                function statusForStep(stepIndex) {
+                    if (stepIndex === 0) return introStatus;
+                    if (stepIndex === completionButtons.length - 1) return waitStatus;
+                    return document.getElementById(`audio${stepIndex}-recording-status`);
+                }
+
+                function setStepDetail(stepIndex, message, tone = '') {
+                    const status = statusForStep(stepIndex);
+                    status.textContent = message;
+                    status.classList.remove('is-active', 'is-complete');
+                    if (tone) status.classList.add(tone);
+                }
+
+                function setStepComplete(stepIndex, isComplete) {
+                    const button = completionButtons[stepIndex];
+                    button.classList.toggle('is-complete', isComplete);
+                    button.setAttribute('aria-pressed', String(isComplete));
+                    button.textContent = isComplete ? '✓ Complete' : '○ Incomplete';
+                }
+
+                function resetStepsFrom(stepIndex) {
+                    for (let index = stepIndex; index < completionButtons.length; index++) {
+                        setStepComplete(index, false);
+                        setStepDetail(index, 'Not started.');
+                    }
+                }
+
+                function publishPrsState(phase, audioId, message, takeover = false) {
+                    sequenceNotice.textContent = message;
+                    sequenceNotice.classList.toggle('is-ready', phase === 'waiting_for_next_task');
+                    return fetch('/prs_workflow_state', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            run_id: runId,
+                            task_id: eventMarker,
+                            condition: condition,
+                            phase: phase,
+                            takeover: takeover,
+                            audio_id: audioId,
+                            message: message
+                        })
+                    }).then(response => {
+                        if (!response.ok) throw new Error(`Unable to update PRS workflow (${response.status})`);
+                        return response.json();
+                    }).catch(error => console.error(error));
+                }
+
+                function requestRecordingStop(baseName) {
+                    return fetch('/record_task_audio', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            event_marker: eventMarker,
+                            condition: condition,
+                            action: 'stop',
+                            question: baseName
+                        })
+                    });
+                }
+
+                function stopActiveRecording() {
+                    if (!activeRecording) return;
+                    const recording = activeRecording;
+                    activeRecording = null;
+                    requestRecordingStop(recording.baseName)
+                        .catch(error => console.error('Unable to stop PRS recording:', error));
+                }
+
+                function clearPendingTiming() {
+                    sequenceVersion++;
+                    pendingTimeouts.forEach(timeoutId => clearTimeout(timeoutId));
+                    pendingIntervals.forEach(intervalId => clearInterval(intervalId));
+                    pendingTimeouts = [];
+                    pendingIntervals = [];
+                    stopActiveRecording();
+                }
+
+                function schedule(callback, delay, version) {
+                    const timeoutId = setTimeout(() => {
+                        if (sequenceVersion === version) callback();
+                    }, delay);
+                    pendingTimeouts.push(timeoutId);
+                }
+
+                function pauseOtherPlayers(activePlayer) {
+                    allPlayers.forEach(player => {
+                        if (player !== activePlayer && !player.paused) player.pause();
+                    });
+                }
+
+                async function startRecordingForSegment(audioElement, baseName, stepIndex) {
+                    const version = sequenceVersion;
+                    setStepDetail(stepIndex, 'Starting recording…', 'is-active');
                     try {
-                        emarker = eventMarker + "_" + baseName;
-                        setEventMarker(emarker);
-                        startRecording();
-                        playBeep(); // Play initial beep
-                    
-                        console.log(`Recording started for ${baseName}`);
+                        setEventMarker(`${eventMarker}_${baseName}`);
+                        const response = await fetch('/start_recording', { method: 'POST' });
+                        if (!response.ok) throw new Error('Unable to start recording.');
+                        if (sequenceVersion !== version) {
+                            await requestRecordingStop(baseName);
+                            return;
+                        }
+                        activeRecording = { baseName: baseName, stepIndex: stepIndex };
+                        setStepDetail(stepIndex, 'Recording in progress. The 20-second response timer is running.', 'is-active');
+                        playBeep();
+                        publishPrsState('recording', baseName, `Participant is answering PRS statement ${stepIndex}.`);
 
-                        setTimeout(() => {
-                            playBeep();
-                            setTimeout(playBeep, 500); 
-                        }, 15000);
-
-                        setTimeout(() => {
-                            stopRecordingForSegment(audioElement, baseName);
-                        }, 20000);
+                        schedule(() => {
+                            let beepCount = 0;
+                            const intervalId = setInterval(() => {
+                                if (sequenceVersion !== version) {
+                                    clearInterval(intervalId);
+                                    return;
+                                }
+                                playBeep();
+                                beepCount++;
+                                if (beepCount === 2) clearInterval(intervalId);
+                            }, 500);
+                            pendingIntervals.push(intervalId);
+                        }, 15000, version);
+                        schedule(() => stopRecordingForSegment(audioElement, baseName, stepIndex, version), 20000, version);
                     } catch (error) {
-                        console.error("Recording failed:", error);
+                        setStepDetail(stepIndex, 'Recording could not be started. Replay this statement to try again.');
+                        console.error('Recording failed:', error);
                     }
                 }
 
-                function stopRecordingForSegment(audioElement, baseName) {
-                    const statusElement = audioElement.parentElement.querySelector(".recording-status");
-                    console.log(`Stopping recording for ${baseName}`);
-                    recordTaskAudio(eventMarker, condition, 'stop', baseName, statusElement);
-                    statusElement.innerText = "Recording stopped.";
-                    playNextAudio();
-                }
-
-                function playWaitMessage() {
-                    console.log("Playing wait message...");
-                    waitMessageAudio.play();
-                    
-                    waitMessageAudio.onended = function () {
-                        console.log("Wait message finished.");
-                        completeTask();
-                    };
-                }
-
-                function completeTask() {
-                    if (eventMarker === 'prs_1') {
-                        setEventMarker('sart_3');
-                    } else if (eventMarker === 'prs_2') {
-                        setEventMarker('sart_6');
+                async function stopRecordingForSegment(audioElement, baseName, stepIndex, version) {
+                    if (sequenceVersion !== version || !activeRecording) return;
+                    activeRecording = null;
+                    try {
+                        const response = await requestRecordingStop(baseName);
+                        if (!response.ok || sequenceVersion !== version) throw new Error('Unable to stop recording.');
+                        setStepComplete(stepIndex, true);
+                        setStepDetail(stepIndex, 'Recording stopped. Statement complete; the next audio is starting automatically.', 'is-complete');
+                        playNextAudio();
+                    } catch (error) {
+                        setStepDetail(stepIndex, 'Recording could not be stopped. Mark this statement manually after resolving the recording.');
+                        console.error('Recording failed:', error);
                     }
-                    setCondition('None');
-                    console.log("All audio segments completed.");
                 }
 
                 function playNextAudio() {
                     if (currentIndex < audioElements.length) {
-                        let audio = audioElements[currentIndex];
-                        let audioSrc = audio.querySelector("source").getAttribute("src");
-                        let baseName = audioSrc.split('/').pop().replace(/\.[^/.]+$/, "");
-
-                        audio.play();
-                        console.log(`Playing audio: ${baseName}`);
-
-                        audio.onended = function () {
-                            console.log(`Finished audio: ${baseName}`);
-                            startRecordingForSegment(audio, baseName);
-                        };
-
+                        const audio = audioElements[currentIndex];
                         currentIndex++;
+                        audio.currentTime = 0;
+                        audio.play().catch(error => console.error('Unable to play PRS statement:', error));
                     } else {
-                        // All randomized PRS audio files completed, now play wait message
-                        playWaitMessage();
+                        waitMessageAudio.currentTime = 0;
+                        waitMessageAudio.play().catch(error => console.error('Unable to play wait message:', error));
                     }
                 }
 
-                introAudio.onended = function () {
-                    console.log("Intro finished, starting first randomized audio...");
+                introAudio.addEventListener('play', function () {
+                    clearPendingTiming();
+                    currentIndex = 0;
+                    pauseOtherPlayers(introAudio);
+                    resetStepsFrom(0);
+                    setStepDetail(0, 'Introduction is playing.', 'is-active');
+                    publishPrsState('playing', 'intro', 'PRS introduction is playing.');
+                });
+
+                introAudio.addEventListener('ended', function () {
+                    setStepComplete(0, true);
+                    setStepDetail(0, 'Introduction complete. The first statement is starting automatically.', 'is-complete');
                     playNextAudio();
-                };
+                });
+
+                audioElements.forEach((audio, audioIndex) => {
+                    const stepIndex = audioIndex + 1;
+                    const baseName = audio.dataset.audioName.replace(/\.[^/.]+$/, '');
+
+                    audio.addEventListener('play', function () {
+                        clearPendingTiming();
+                        currentIndex = audioIndex + 1;
+                        pauseOtherPlayers(audio);
+                        resetStepsFrom(stepIndex);
+                        setStepDetail(stepIndex, `Statement ${stepIndex} is playing.`, 'is-active');
+                        publishPrsState('playing', baseName, `PRS statement ${stepIndex} is playing.`);
+                    });
+
+                    audio.addEventListener('ended', function () {
+                        startRecordingForSegment(audio, baseName, stepIndex);
+                    });
+                });
+
+                waitMessageAudio.addEventListener('play', function () {
+                    const stepIndex = completionButtons.length - 1;
+                    pauseOtherPlayers(waitMessageAudio);
+                    resetStepsFrom(stepIndex);
+                    setStepDetail(stepIndex, 'The “Please wait for further instructions” message is playing.', 'is-active');
+                    publishPrsState('playing', 'wait_message', 'PRS wait message is playing.');
+                });
+
+                waitMessageAudio.addEventListener('ended', function () {
+                    const stepIndex = completionButtons.length - 1;
+                    setStepComplete(stepIndex, true);
+                    setStepDetail(stepIndex, 'Wait message complete. The participant is waiting for the next task.', 'is-complete');
+                    setEventMarker(eventMarker === 'prs_1' ? 'sart_3' : 'sart_6');
+                    setCondition('None');
+                    publishPrsState('waiting_for_next_task', 'wait_message', 'Participant finished PRS and is waiting for the next task.');
+                });
+
+                completionButtons.forEach(button => {
+                    button.addEventListener('click', function () {
+                        const stepIndex = Number(this.dataset.stepIndex);
+                        const isComplete = this.getAttribute('aria-pressed') !== 'true';
+                        setStepComplete(stepIndex, isComplete);
+                        setStepDetail(
+                            stepIndex,
+                            isComplete ? 'Marked complete manually by the experimenter.' : 'Marked incomplete manually by the experimenter.',
+                            isComplete ? 'is-complete' : ''
+                        );
+                    });
+                });
+
+                window.addEventListener('pagehide', function () {
+                    if (!activeRecording) return;
+                    const stopPayload = new Blob([JSON.stringify({
+                        event_marker: eventMarker,
+                        condition: condition,
+                        action: 'stop',
+                        question: activeRecording.baseName
+                    })], { type: 'application/json' });
+                    navigator.sendBeacon('/record_task_audio', stopPayload);
+                });
+
+                publishPrsState('not_started', null, 'Start the PRS introduction audio when the participant is ready.', true);
             });
         </script>
     </body>
     </html>
 
     """
-    return render_template_string(html_template, intro=intro, audio_files=prs_audio_files, wait_message=wait_message)
+    return render_template_string(
+        html_template,
+        intro=intro,
+        audio_files=prs_audio_files,
+        wait_message=wait_message,
+        transcripts=transcripts,
+    )
 
 @app.route('/room_observation')
 def room_observation() -> Response:

@@ -191,7 +191,8 @@
                 <option value="virtual_plants">Virtual / Plants</option>
                 <option value="virtual_no_plants">Virtual / No Plants</option>
             </select><br><br>
-            <button id="startPRSTask1">Start Task</button><br>
+            <button id="startPRSTask1" data-prs-task-id="prs_1">Start Task</button><br>
+            <aside class="prs-workflow-notice" data-prs-task-status="prs_1" hidden></aside><br>
             <!-- <p id="breakInstructions1" style="display:none;">After the PRS is complete, you will move with the subject back into the break room. They will then complete the IAT, Break 1, and Stress Task #2</p> -->
         </div><br>
         <aside id="step11Guidance" class="transition-notice" role="status" aria-live="polite" hidden>Step 11 complete. Confirm SART Session 3 in the participant window</aside>
@@ -291,7 +292,8 @@
                 <option value="virtual_plants">Virtual / Plants</option>
                 <option value="virtual_no_plants">Virtual / No Plants</option>
             </select><br><br>
-            <button id="startPRSTask2">Start Task</button><br>
+            <button id="startPRSTask2" data-prs-task-id="prs_2">Start Task</button><br>
+            <aside class="prs-workflow-notice" data-prs-task-status="prs_2" hidden></aside><br>
             <!-- <p id="breakInstructions2" style="display:none;">After the PRS is complete, you will move with the subject back into the break room. They will then complete the IAT #2 and Break 2</p> -->
         </div><br>
     </div><br>
@@ -612,10 +614,30 @@
             });
         }
 
+        function renderPrsWorkflowState(prsState) {
+            document.querySelectorAll('[data-prs-task-status]').forEach(notice => {
+                if (!prsState || notice.dataset.prsTaskStatus !== prsState.task_id || prsState.phase === 'not_started') {
+                    notice.hidden = true;
+                    notice.textContent = '';
+                    notice.classList.remove('is-ready');
+                    return;
+                }
+
+                notice.textContent = prsState.message;
+                notice.hidden = false;
+                notice.classList.toggle('is-ready', prsState.phase === 'waiting_for_next_task');
+            });
+        }
+
         fetch('/room_workflow_state')
             .then(response => response.json())
             .then(renderRoomWorkflowState)
             .catch(error => console.error('Unable to load room workflow state:', error));
+
+        fetch('/prs_workflow_state')
+            .then(response => response.json())
+            .then(renderPrsWorkflowState)
+            .catch(error => console.error('Unable to load PRS workflow state:', error));
 
         eventSource.onmessage = function(event) {
             const data = JSON.parse(event.data);
@@ -630,6 +652,8 @@
                 console.log("Status update:", data.message);
             } else if (data.event_type === 'room_workflow_state') {
                 renderRoomWorkflowState(data.room_state);
+            } else if (data.event_type === 'prs_workflow_state') {
+                renderPrsWorkflowState(data.prs_state);
             } else if (data.event_type === 'error') {
                 console.error("Error:", data.message);
                 alert("Error: " + data.message);
@@ -665,8 +689,13 @@
                                 workflow_step_19: 'task_2'
                             };
                             const roomTaskId = roomTaskByWorkflowStep[this.dataset.taskId];
+                            const prsTaskByWorkflowStep = {
+                                workflow_step_11: 'prs_1',
+                                workflow_step_19: 'prs_2'
+                            };
+                            const resetRequests = [];
                             if (roomTaskId) {
-                                return fetch('/room_workflow_state', {
+                                resetRequests.push(fetch('/room_workflow_state', {
                                     method: 'POST',
                                     headers: { 'Content-Type': 'application/json' },
                                     body: JSON.stringify({
@@ -676,8 +705,23 @@
                                         takeover: true,
                                         message: 'Room task has not started.'
                                     })
-                                });
+                                }));
                             }
+                            const prsTaskId = prsTaskByWorkflowStep[this.dataset.taskId];
+                            if (prsTaskId) {
+                                resetRequests.push(fetch('/prs_workflow_state', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({
+                                        run_id: crypto.randomUUID(),
+                                        task_id: prsTaskId,
+                                        phase: 'not_started',
+                                        takeover: true,
+                                        message: 'PRS task has not started.'
+                                    })
+                                }));
+                            }
+                            return Promise.all(resetRequests);
                         }
                     })
                     .catch(error => console.error('Error:', error))
@@ -1135,11 +1179,15 @@
             // });
 
             startPRSTaskButton1.addEventListener('click', function() {
-                // breakInstructions1.style.display = 'block';
+                const taskContainer = this.closest('.innerModule');
+                localStorage.setItem('currentEventMarker', this.dataset.prsTaskId);
+                localStorage.setItem('currentCondition', taskContainer.querySelector('select').value);
                 window.open('/prs', '_blank', 'width=800, height=600');
             });
             startPRSTaskButton2.addEventListener('click', function() {
-                // breakInstructions2.style.display = 'block';
+                const taskContainer = this.closest('.innerModule');
+                localStorage.setItem('currentEventMarker', this.dataset.prsTaskId);
+                localStorage.setItem('currentCondition', taskContainer.querySelector('select').value);
                 window.open('/prs', '_blank', 'width=800, height=600');
             });
         });
