@@ -12,10 +12,10 @@
     <h2>Instructions</h2>
     <ul>
         <li>Ensure the subject is fitted with their microphone, AirPods, or headphones.</li>
-        <li>Press play on one audio file at a time.</li>
+        <li>Press play on the introduction. The remaining audio advances automatically as each timed section finishes.</li>
         <li>Each response period is timed, and recording starts and stops automatically.</li>
         <li>The subject hears one beep when recording starts and two beeps when 15 seconds remain.</li>
-        <li>Wait for the green readiness notice before playing the next audio file.</li>
+        <li>Use the individual audio controls only when a section needs to be replayed.</li>
     </ul>
 
     <aside id="room-sequence-notice" class="room-sequence-notice" role="status" aria-live="polite">
@@ -204,11 +204,7 @@
                 pendingTimeouts.push(timeoutId);
             }
 
-            function markReadyForAudio(audioId, label) {
-                publishRoomState('ready_for_next_audio', audioId, `Participant is ready for ${label}.`);
-            }
-
-            function startAnswerPeriod(questionNumber, status, nextAudioId, nextLabel) {
+            function startAnswerPeriod(questionNumber, status, nextPlayer) {
                 const version = sequenceVersion;
                 activeRecording = questionNumber;
                 setStepDetail(questionNumber + 1, 'Recording in progress. The 90-second response timer is running.', 'is-active');
@@ -234,9 +230,10 @@
                     recordTaskAudio(eventMarker, condition, 'stop', questionNumber, status);
                     activeRecording = null;
                     setStepComplete(questionNumber + 1, true);
-                    if (nextAudioId) {
-                        setStepDetail(questionNumber + 1, 'Recording stopped. Question complete; the participant is ready for Question 2.', 'is-complete');
-                        markReadyForAudio(nextAudioId, nextLabel);
+                    if (nextPlayer) {
+                        setStepDetail(questionNumber + 1, 'Recording stopped. Question complete; Question 2 is starting automatically.', 'is-complete');
+                        nextPlayer.currentTime = 0;
+                        nextPlayer.play().catch(error => console.error('Unable to play Question 2:', error));
                     } else {
                         setStepDetail(questionNumber + 1, 'Recording stopped. Final question complete; the participant is waiting for the next task.', 'is-complete');
                         setCondition('None');
@@ -264,8 +261,9 @@
                 publishRoomState('in_progress', 'observation', 'Participant is observing the room.');
                 schedule(() => {
                     setStepComplete(0, true);
-                    setStepDetail(0, 'Observation complete. The participant is ready for the response instructions.', 'is-complete');
-                    markReadyForAudio('audioPlayer2', 'response instructions');
+                    setStepDetail(0, 'Observation complete. Response instructions are starting automatically.', 'is-complete');
+                    players[1].currentTime = 0;
+                    players[1].play().catch(error => console.error('Unable to play response instructions:', error));
                 }, 60000, version);
             });
 
@@ -275,17 +273,18 @@
                 publishRoomState('in_progress', 'instructions_pause', 'Participant heard the response instructions.');
                 schedule(() => {
                     setStepComplete(1, true);
-                    setStepDetail(1, 'Instructions complete. The participant is ready for Question 1.', 'is-complete');
-                    markReadyForAudio('audioPlayer3', 'Question 1');
+                    setStepDetail(1, 'Instructions complete. Question 1 is starting automatically.', 'is-complete');
+                    players[2].currentTime = 0;
+                    players[2].play().catch(error => console.error('Unable to play Question 1:', error));
                 }, 2000, version);
             });
 
             players[2].addEventListener('ended', function() {
-                startAnswerPeriod(1, statuses[2], 'audioPlayer4', 'Question 2');
+                startAnswerPeriod(1, statuses[2], players[3]);
             });
 
             players[3].addEventListener('ended', function() {
-                startAnswerPeriod(2, statuses[3], null, null);
+                startAnswerPeriod(2, statuses[3], null);
             });
 
             waitPlayer.addEventListener('play', function() {
