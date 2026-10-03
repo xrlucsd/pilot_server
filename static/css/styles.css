@@ -358,3 +358,57 @@ button.task-completed {
     line-height: 1.45;
     color: #3e4852;
 }
+
+.room-step-status {
+    display: flex;
+    align-items: stretch;
+    gap: 10px;
+    margin-top: 14px;
+}
+
+.room-step-completion {
+    flex: 0 0 auto;
+    min-width: 118px;
+    border: 1px solid #7b8794;
+    background: #ffffff;
+    color: #37424d;
+    font-weight: 600;
+}
+
+.room-step-completion.is-complete {
+    border-color: #18794e;
+    background: #18794e;
+    color: #ffffff;
+}
+
+.room-step-detail {
+    flex: 1 1 auto;
+    margin: 0;
+    padding: 10px 12px;
+    border-left: 4px solid #7b8794;
+    background: #eef1f4;
+    color: #26313b;
+    font-weight: 600;
+}
+
+.room-step-detail.is-active {
+    border-left-color: #9a6700;
+    background: #fff4ce;
+    color: #664d00;
+}
+
+.room-step-detail.is-complete {
+    border-left-color: #18794e;
+    background: #edf8f2;
+    color: #115c3b;
+}
+
+@media (max-width: 700px) {
+    .room-step-status {
+        flex-direction: column;
+    }
+
+    .room-step-completion {
+        width: 100%;
+    }
+}
