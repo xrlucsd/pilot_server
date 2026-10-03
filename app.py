@@ -13,6 +13,7 @@ import re
 import string
 import random
 import base64
+import copy
 from transcription_manager import TranscriptionManager
 from subject_manager_2 import SubjectManager
 from recording_manager import RecordingManager
@@ -46,6 +47,15 @@ transcription_manager = TranscriptionManager()
 
 update_message = None
 update_event = threading.Event()
+room_workflow_lock = threading.Lock()
+room_workflow_state = {
+    'run_id': None,
+    'task_id': None,
+    'condition': None,
+    'phase': 'not_started',
+    'audio_id': None,
+    'message': 'Room task has not started.',
+}
 
 ##################################################################
 ## Routes 
@@ -224,6 +234,50 @@ def status_update() -> Response:
     
     update_event.set()
     return jsonify(success=True), 200
+
+@app.route('/room_workflow_state', methods=['GET', 'POST'])
+def room_workflow_status() -> Response:
+    global room_workflow_state, update_message
+
+    if request.method == 'GET':
+        with room_workflow_lock:
+            return jsonify(copy.deepcopy(room_workflow_state)), 200
+
+    request_data = request.get_json(silent=True) or {}
+    run_id = request_data.get('run_id')
+    task_id = request_data.get('task_id')
+    phase = request_data.get('phase')
+    takeover = request_data.get('takeover') is True
+    valid_task_ids = {'task_1', 'task_2'}
+    valid_phases = {
+        'not_started', 'playing', 'in_progress', 'ready_for_next_audio',
+        'waiting_for_next_task'
+    }
+
+    if not isinstance(run_id, str) or not run_id or task_id not in valid_task_ids or phase not in valid_phases:
+        return jsonify({'error': 'A room run ID, valid task ID, and valid phase are required.'}), 400
+
+    next_state = {
+        'run_id': run_id,
+        'task_id': task_id,
+        'condition': request_data.get('condition'),
+        'phase': phase,
+        'audio_id': request_data.get('audio_id'),
+        'message': request_data.get('message', ''),
+    }
+
+    with room_workflow_lock:
+        current_run_id = room_workflow_state.get('run_id')
+        if current_run_id and next_state['run_id'] != current_run_id and not takeover:
+            return jsonify({'error': 'This room task window is no longer active.'}), 409
+        room_workflow_state = next_state
+        update_message = {
+            'event_type': 'room_workflow_state',
+            'room_state': copy.deepcopy(room_workflow_state),
+        }
+
+    update_event.set()
+    return jsonify(next_state), 200
 
 @app.route('/send_error', methods=['POST'])
 def send_error() -> Response:

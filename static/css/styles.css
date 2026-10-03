@@ -296,7 +296,8 @@ button.task-completed {
     }
 
     iframe,
-    video {
+    video,
+    .room-audio-step audio {
         max-width: 100%;
     }
 
@@ -325,4 +326,35 @@ button.task-completed {
 
 .buttonRow button {
     margin-right: 10px;
+}
+.room-workflow-notice,
+.room-sequence-notice {
+    margin-top: 12px;
+    padding: 12px 14px;
+    border-left: 4px solid #59636e;
+    background: #f3f5f7;
+    color: #26313b;
+    max-width: 720px;
+}
+
+.room-workflow-notice.is-ready,
+.room-sequence-notice.is-ready {
+    border-left-color: #18794e;
+    background: #edf8f2;
+    color: #115c3b;
+    font-weight: 600;
+}
+
+.room-audio-step {
+    margin: 0 0 22px;
+    padding: 16px;
+    border: 1px solid #d8dde3;
+    border-radius: 6px;
+}
+
+.audio-transcript {
+    margin: 10px 0 0;
+    max-width: 760px;
+    line-height: 1.45;
+    color: #3e4852;
 }

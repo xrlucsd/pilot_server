@@ -171,7 +171,8 @@
                 <option value="virtual_plants">Virtual / Plants</option>
                 <option value="virtual_no_plants">Virtual / No Plants</option>
             </select><br><br>
-            <button class="openRoomObservationTask">Go to Task</button><br><br>
+            <button class="openRoomObservationTask" data-room-task-id="task_1">Go to Task</button><br>
+            <aside class="room-workflow-notice" data-room-task-status="task_1" hidden></aside><br>
         </div><br>
 
         <button class="toggle">PRS Task 1</button><br>
@@ -262,7 +263,8 @@
                 <option value="virtual_no_plants">Virtual / No Plants</option>
             </select><br><br>
 
-            <button class="openRoomObservationTask">Go to Task</button><br><br>
+            <button class="openRoomObservationTask" data-room-task-id="task_2">Go to Task</button><br>
+            <aside class="room-workflow-notice" data-room-task-status="task_2" hidden></aside><br>
         </div><br>
 
         <button class="toggle">PRS Task 2</button><br>
@@ -569,6 +571,26 @@
             updateCurrentWorkflowStep();
         }
 
+        function renderRoomWorkflowState(roomState) {
+            document.querySelectorAll('[data-room-task-status]').forEach(notice => {
+                if (!roomState || notice.dataset.roomTaskStatus !== roomState.task_id || roomState.phase === 'not_started') {
+                    notice.hidden = true;
+                    notice.textContent = '';
+                    notice.classList.remove('is-ready');
+                    return;
+                }
+
+                notice.textContent = roomState.message;
+                notice.hidden = false;
+                notice.classList.toggle('is-ready', roomState.phase === 'ready_for_next_audio' || roomState.phase === 'waiting_for_next_task');
+            });
+        }
+
+        fetch('/room_workflow_state')
+            .then(response => response.json())
+            .then(renderRoomWorkflowState)
+            .catch(error => console.error('Unable to load room workflow state:', error));
+
         eventSource.onmessage = function(event) {
             const data = JSON.parse(event.data);
             console.log("Update received:", data);
@@ -580,6 +602,8 @@
                 setWorkflowStatus(data.task_id, false);
             } else if (data.event_type === 'status_update') {
                 console.log("Status update:", data.message);
+            } else if (data.event_type === 'room_workflow_state') {
+                renderRoomWorkflowState(data.room_state);
             } else if (data.event_type === 'error') {
                 console.error("Error:", data.message);
                 alert("Error: " + data.message);
@@ -609,6 +633,26 @@
                             throw new Error(`Unable to ${action} workflow step (${response.status})`);
                         }
                         setWorkflowStatus(this.dataset.taskId, !isComplete);
+                        if (action === 'reopen') {
+                            const roomTaskByWorkflowStep = {
+                                workflow_step_11: 'task_1',
+                                workflow_step_19: 'task_2'
+                            };
+                            const roomTaskId = roomTaskByWorkflowStep[this.dataset.taskId];
+                            if (roomTaskId) {
+                                return fetch('/room_workflow_state', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({
+                                        run_id: crypto.randomUUID(),
+                                        task_id: roomTaskId,
+                                        phase: 'not_started',
+                                        takeover: true,
+                                        message: 'Room task has not started.'
+                                    })
+                                });
+                            }
+                        }
                     })
                     .catch(error => console.error('Error:', error))
                     .finally(() => {
@@ -1020,6 +1064,10 @@
 
             roomObservationButtons.forEach(button => {
                 button.addEventListener('click', function() {
+                    const taskContainer = this.closest('.innerModule');
+                    const selectedCondition = taskContainer.querySelector('select').value;
+                    localStorage.setItem('currentEventMarker', this.dataset.roomTaskId);
+                    localStorage.setItem('currentCondition', selectedCondition);
                     window.open('/room_observation', '_blank', 'width=800, height=600');
                 });
             });
