@@ -297,7 +297,8 @@ button.task-completed {
 
     iframe,
     video,
-    .room-audio-step audio {
+    .room-audio-step audio,
+    .prs-audio-step audio {
         max-width: 100%;
     }
 
@@ -328,7 +329,9 @@ button.task-completed {
     margin-right: 10px;
 }
 .room-workflow-notice,
-.room-sequence-notice {
+.prs-workflow-notice,
+.room-sequence-notice,
+.prs-sequence-notice {
     margin-top: 12px;
     padding: 12px 14px;
     border-left: 4px solid #59636e;
@@ -338,14 +341,17 @@ button.task-completed {
 }
 
 .room-workflow-notice.is-ready,
-.room-sequence-notice.is-ready {
+.prs-workflow-notice.is-ready,
+.room-sequence-notice.is-ready,
+.prs-sequence-notice.is-ready {
     border-left-color: #18794e;
     background: #edf8f2;
     color: #115c3b;
     font-weight: 600;
 }
 
-.room-audio-step {
+.room-audio-step,
+.prs-audio-step {
     margin: 0 0 22px;
     padding: 16px;
     border: 1px solid #d8dde3;
@@ -366,7 +372,8 @@ button.task-completed {
     margin-top: 14px;
 }
 
-.room-step-completion {
+.room-step-completion,
+.prs-step-completion {
     flex: 0 0 auto;
     min-width: 118px;
     border: 1px solid #7b8794;
@@ -375,13 +382,15 @@ button.task-completed {
     font-weight: 600;
 }
 
-.room-step-completion.is-complete {
+.room-step-completion.is-complete,
+.prs-step-completion.is-complete {
     border-color: #18794e;
     background: #18794e;
     color: #ffffff;
 }
 
-.room-step-detail {
+.room-step-detail,
+.prs-step-detail {
     flex: 1 1 auto;
     margin: 0;
     padding: 10px 12px;
@@ -391,13 +400,15 @@ button.task-completed {
     font-weight: 600;
 }
 
-.room-step-detail.is-active {
+.room-step-detail.is-active,
+.prs-step-detail.is-active {
     border-left-color: #9a6700;
     background: #fff4ce;
     color: #664d00;
 }
 
-.room-step-detail.is-complete {
+.room-step-detail.is-complete,
+.prs-step-detail.is-complete {
     border-left-color: #18794e;
     background: #edf8f2;
     color: #115c3b;
@@ -408,7 +419,8 @@ button.task-completed {
         flex-direction: column;
     }
 
-    .room-step-completion {
+    .room-step-completion,
+    .prs-step-completion {
         width: 100%;
     }
 }
