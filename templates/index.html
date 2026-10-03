@@ -88,7 +88,7 @@
     </div><br>
 
     <div class="workflow-step workflow-step-toggle">
-        <button class="toggle workflow-step-trigger">Step 4a — AirPods and Audio Testing</button>
+        <button class="toggle workflow-step-trigger">Step 4a — Audio Setup</button>
         <button id="workflow_step_4a" class="workflow-status workflow-status-manual" data-task-id="workflow_step_4a" type="button" aria-pressed="false">○ Waiting</button>
     </div><br>
     <div class="innerModule" style="display:none;">
@@ -98,7 +98,7 @@
         <button id="testAudioOutput">Test Audio Output</button><br><br>
         <label for="audioDevices">Select Audio Input Device:</label><br><br>
         <select id="audioDevices" onchange="setDevice()"></select><br><br>
-        <aside id="step4aGuidance" class="transition-notice" role="status" aria-live="polite" hidden>AirPods and audio testing are complete. Enter the experimenter password in the participant window so the participant can proceed to Step 4b.</aside>
+        <aside id="step4aGuidance" class="transition-notice" role="status" aria-live="polite" hidden>Audio test complete. Enter experimenter password in the participant window</aside>
     </div><br>
 
     <div class="workflow-step workflow-step-static">
@@ -110,7 +110,7 @@
         <span id="ser_baseline" class="workflow-status" style="display:none;">Complete</span>
     </div>
     <div class="innerModule" data-transition-only="true" style="display:none;">
-        <aside id="step5Guidance" class="transition-notice" role="status" aria-live="polite" hidden>Step 5 is complete. Enter or confirm SART Session 1 in the participant window for the upcoming SART Task 1.</aside>
+        <aside id="step5Guidance" class="transition-notice" role="status" aria-live="polite" hidden>Step 5 complete. Confirm SART Session 1 in the participant window</aside>
     </div><br>
 
     <button class="toggle workflow-step workflow-step-toggle">
@@ -129,7 +129,7 @@
         <span id="test_1" class="workflow-status" style="display:none;">Complete</span>
     </div>
     <div class="innerModule" data-transition-only="true" style="display:none;">
-        <aside id="step8Guidance" class="transition-notice" role="status" aria-live="polite" hidden>Step 8 is complete. Enter or confirm SART Session 2 in the participant window for the upcoming SART Task 2.</aside>
+        <aside id="step8Guidance" class="transition-notice" role="status" aria-live="polite" hidden>Step 8 complete. Confirm SART Session 2 in the participant window</aside>
     </div><br>
 
     <button class="toggle workflow-step workflow-step-toggle">
@@ -144,7 +144,7 @@
         <span id="survey_ipr1" class="workflow-status" style="display:none;">Complete</span>
     </button><br>
     <div class="innerModule" data-transition-only="true" style="display:none;">
-        <aside id="step10Guidance" class="transition-notice" role="status" aria-live="polite" hidden>Personal Reactions 1 is complete. Next, escort the participant to Condition 1.</aside>
+        <aside id="step10Guidance" class="transition-notice" role="status" aria-live="polite" hidden>Personal Reactions 1 complete. Escort participant to Condition 1</aside>
     </div><br>
 
     <!-- Task for continuous recording -->
@@ -168,7 +168,6 @@
     </div><br>
     <div class="condition-group" style="display:none;">
         <h3>Condition 1</h3>
-        <aside id="step11Guidance" class="transition-notice" role="status" aria-live="polite" hidden>Step 11 is complete. Enter or confirm SART Session 3 in the participant window for the upcoming SART Task 3.</aside>
         <button class="toggle">Room Task 1</button><br>
         <div class="innerModule" id="taskDiv1" style="display:none">
             <select onchange="updateCondition('taskDiv1', 'task_1')">
@@ -194,6 +193,7 @@
             <button id="startPRSTask1">Start Task</button><br>
             <!-- <p id="breakInstructions1" style="display:none;">After the PRS is complete, you will move with the subject back into the break room. They will then complete the IAT, Break 1, and Stress Task #2</p> -->
         </div><br>
+        <aside id="step11Guidance" class="transition-notice" role="status" aria-live="polite" hidden>Step 11 complete. Confirm SART Session 3 in the participant window</aside>
     </div><br>
 
     <button class="toggle workflow-step workflow-step-toggle">
@@ -212,7 +212,7 @@
         <span id="break_1" class="workflow-status" style="display:none;">Complete</span>
     </div>
     <div class="innerModule" data-transition-only="true" style="display:none;">
-        <aside id="step14Guidance" class="transition-notice" role="status" aria-live="polite" hidden>Step 14 is complete. Enter or confirm SART Session 4 in the participant window for the upcoming SART Task 4.</aside>
+        <aside id="step14Guidance" class="transition-notice" role="status" aria-live="polite" hidden>Step 14 complete. Confirm SART Session 4 in the participant window</aside>
     </div><br>
 
     <button class="toggle workflow-step workflow-step-toggle">
@@ -227,7 +227,7 @@
         <span id="test_2" class="workflow-status" style="display:none;">Complete</span>
     </div>
     <div class="innerModule" data-transition-only="true" style="display:none;">
-        <aside id="step16Guidance" class="transition-notice" role="status" aria-live="polite" hidden>Step 16 is complete. Enter or confirm SART Session 5 in the participant window for the upcoming SART Task 5.</aside>
+        <aside id="step16Guidance" class="transition-notice" role="status" aria-live="polite" hidden>Step 16 complete. Confirm SART Session 5 in the participant window</aside>
     </div><br>
 
     <button class="toggle workflow-step workflow-step-toggle">
@@ -242,7 +242,7 @@
         <span id="survey_ipr3" class="workflow-status" style="display:none;">Complete</span>
     </button><br>
     <div class="innerModule" data-transition-only="true" style="display:none;">
-        <aside id="step18Guidance" class="transition-notice" role="status" aria-live="polite" hidden>Personal Reactions 3 is complete. Next, escort the participant to Condition 2.</aside>
+        <aside id="step18Guidance" class="transition-notice" role="status" aria-live="polite" hidden>Personal Reactions 3 complete. Escort participant to Condition 2</aside>
     </div><br>
 
         <!-- <button class="toggle">Task 2 (General Recording)</button><br>
@@ -266,7 +266,7 @@
     </div><br>
     <div class="condition-group" style="display:none;">
         <h3>Condition 2</h3>
-        <aside id="step19Guidance" class="transition-notice" role="status" aria-live="polite" hidden>Step 19 is complete. Enter or confirm SART Session 6 in the participant window for the upcoming SART Task 6.</aside>
+        <aside id="step19Guidance" class="transition-notice" role="status" aria-live="polite" hidden>Step 19 complete. Confirm SART Session 6 in the participant window</aside>
         <button class="toggle" id="taskButton2">Room Task 2</button><br>
         <div class="innerModule" id="taskDiv2" style="display:none">
             <select onchange="updateCondition('taskDiv2', 'task_2')">
