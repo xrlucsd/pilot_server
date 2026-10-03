@@ -30,7 +30,10 @@
         </audio>
         <p class="audio-transcript"><strong>Transcript:</strong> Welcome. Please spend 60 seconds observing the space around you. Pay attention to all the details you notice: the lighting, furniture, objects, and any other features of the room. Afterward, you will be asked a series of questions about the space. Now begin observing the room.</p>
         <div id="meter"><div id="level"></div></div>
-        <div id="audio1-status" role="status"></div>
+        <div class="room-step-status">
+            <button class="room-step-completion" data-step-index="0" type="button" aria-pressed="false">○ Incomplete</button>
+            <p class="room-step-detail" id="audio1-status" role="status">Not started.</p>
+        </div>
     </section>
 
     <section class="room-audio-step" id="audio2">
@@ -41,7 +44,10 @@
         </audio>
         <p class="audio-transcript"><strong>Transcript:</strong> Now, you will answer a series of questions about the room. Feel free to look around the room as you answer. Speak your answers clearly. Please provide as much detail as possible within the given time for each question. Do your best to speak for the whole time. If you need time to think before you answer, please say your thought process aloud so that you are talking for the whole time. You will hear one beep after each prompt, indicating that you can begin talking. You will hear two beeps when you have 15 seconds remaining to finish your answer.</p>
         <div class="meter"><div class="level"></div></div>
-        <div id="audio2-status" role="status"></div>
+        <div class="room-step-status">
+            <button class="room-step-completion" data-step-index="1" type="button" aria-pressed="false">○ Incomplete</button>
+            <p class="room-step-detail" id="audio2-status" role="status">Not started.</p>
+        </div>
     </section>
 
     <section class="room-audio-step" id="audio3">
@@ -52,7 +58,10 @@
         </audio>
         <p class="audio-transcript"><strong>Transcript:</strong> Imagine describing this room to someone who cannot see it. Speak for two minutes and include as much detail as you can. Be detailed enough that someone could picture the space based on your description alone. You may begin now.</p>
         <div class="meter"><div class="level"></div></div>
-        <div id="audio3-status" role="status"></div>
+        <div class="room-step-status">
+            <button class="room-step-completion" data-step-index="2" type="button" aria-pressed="false">○ Incomplete</button>
+            <p class="room-step-detail" id="audio3-status" role="status">Not started.</p>
+        </div>
     </section>
 
     <section class="room-audio-step" id="audio4">
@@ -63,7 +72,10 @@
         </audio>
         <p class="audio-transcript"><strong>Transcript:</strong> Now, we would like to know how you would rearrange the space to best accommodate or support different types of activities, such as chatting over a cup of coffee with someone or doing independent work. How would you move the furniture? You won't actually move it; just describe each activity and the corresponding arrangement. You can also suggest multiple different arrangements for the same activity. Your rearrangement might make the space more functional relative to certain activities, or more aesthetic, efficient, or any other change you find important. Think of as many different arrangements as possible that could help facilitate different activities. You will have three minutes. You may begin now.</p>
         <div class="meter"><div class="level"></div></div>
-        <div id="audio4-status" role="status"></div>
+        <div class="room-step-status">
+            <button class="room-step-completion" data-step-index="3" type="button" aria-pressed="false">○ Incomplete</button>
+            <p class="room-step-detail" id="audio4-status" role="status">Not started.</p>
+        </div>
     </section>
 
     <section class="room-audio-step" id="wait-message-audio">
@@ -74,7 +86,10 @@
         </audio>
         <p class="audio-transcript"><strong>Transcript:</strong> Please wait for further instructions.</p>
         <div class="meter"><div class="level"></div></div>
-        <div id="wait-audio-status" role="status"></div>
+        <div class="room-step-status">
+            <button class="room-step-completion" data-step-index="4" type="button" aria-pressed="false">○ Incomplete</button>
+            <p class="room-step-detail" id="wait-audio-status" role="status">Not started.</p>
+        </div>
     </section>
 
     <script>
@@ -99,6 +114,7 @@
                 document.getElementById('audio3-status'),
                 document.getElementById('audio4-status')
             ];
+            const completionButtons = Array.from(document.querySelectorAll('.room-step-completion'));
             let pendingTimeouts = [];
             let pendingIntervals = [];
             let activeRecording = null;
@@ -152,6 +168,27 @@
                 }
             }
 
+            function setStepDetail(stepIndex, message, tone = '') {
+                const status = stepIndex === 4 ? waitStatus : statuses[stepIndex];
+                status.textContent = message;
+                status.classList.remove('is-active', 'is-complete');
+                if (tone) status.classList.add(tone);
+            }
+
+            function setStepComplete(stepIndex, isComplete) {
+                const button = completionButtons[stepIndex];
+                button.classList.toggle('is-complete', isComplete);
+                button.setAttribute('aria-pressed', String(isComplete));
+                button.textContent = isComplete ? '✓ Complete' : '○ Incomplete';
+            }
+
+            function resetStepsFrom(stepIndex) {
+                for (let index = stepIndex; index < completionButtons.length; index++) {
+                    setStepComplete(index, false);
+                    setStepDetail(index, 'Not started.');
+                }
+            }
+
             function pauseOtherPlayers(activePlayer) {
                 [...players, waitPlayer].forEach(player => {
                     if (player !== activePlayer && !player.paused) {
@@ -174,7 +211,7 @@
             function startAnswerPeriod(questionNumber, status, nextAudioId, nextLabel) {
                 const version = sequenceVersion;
                 activeRecording = questionNumber;
-                status.textContent = 'Recording started. 90-second response timer is running.';
+                setStepDetail(questionNumber + 1, 'Recording in progress. The 90-second response timer is running.', 'is-active');
                 recordTaskAudio(eventMarker, condition, 'start', questionNumber, status);
                 playBeep();
                 publishRoomState('in_progress', `question_${questionNumber}`, `Participant is answering Question ${questionNumber}.`);
@@ -196,9 +233,12 @@
                 schedule(() => {
                     recordTaskAudio(eventMarker, condition, 'stop', questionNumber, status);
                     activeRecording = null;
+                    setStepComplete(questionNumber + 1, true);
                     if (nextAudioId) {
+                        setStepDetail(questionNumber + 1, 'Recording stopped. Question complete; the participant is ready for Question 2.', 'is-complete');
                         markReadyForAudio(nextAudioId, nextLabel);
                     } else {
+                        setStepDetail(questionNumber + 1, 'Recording stopped. Final question complete; the participant is waiting for the next task.', 'is-complete');
                         setCondition('None');
                         setEventMarker('subject_idle');
                         waitPlayer.currentTime = 0;
@@ -212,26 +252,32 @@
                 player.addEventListener('play', function() {
                     clearPendingTiming();
                     pauseOtherPlayers(player);
-                    statuses.forEach((status, statusIndex) => {
-                        if (statusIndex > index) status.textContent = '';
-                    });
-                    statuses[index].textContent = `${player.closest('.room-audio-step').querySelector('h2').textContent} is now playing.`;
+                    resetStepsFrom(index);
+                    setStepDetail(index, `${player.closest('.room-audio-step').querySelector('h2').textContent} is playing.`, 'is-active');
                     publishRoomState('playing', player.id, `${player.closest('.room-audio-step').querySelector('h2').textContent} is playing.`);
                 });
             });
 
             players[0].addEventListener('ended', function() {
                 const version = sequenceVersion;
-                statuses[0].textContent = '60-second observation timer is running.';
+                setStepDetail(0, 'Audio finished. The participant is completing the 60-second room observation.', 'is-active');
                 publishRoomState('in_progress', 'observation', 'Participant is observing the room.');
-                schedule(() => markReadyForAudio('audioPlayer2', 'response instructions'), 60000, version);
+                schedule(() => {
+                    setStepComplete(0, true);
+                    setStepDetail(0, 'Observation complete. The participant is ready for the response instructions.', 'is-complete');
+                    markReadyForAudio('audioPlayer2', 'response instructions');
+                }, 60000, version);
             });
 
             players[1].addEventListener('ended', function() {
                 const version = sequenceVersion;
-                statuses[1].textContent = 'Preparing Question 1.';
+                setStepDetail(1, 'Instructions finished. Waiting through the 2-second transition before Question 1.', 'is-active');
                 publishRoomState('in_progress', 'instructions_pause', 'Participant heard the response instructions.');
-                schedule(() => markReadyForAudio('audioPlayer3', 'Question 1'), 2000, version);
+                schedule(() => {
+                    setStepComplete(1, true);
+                    setStepDetail(1, 'Instructions complete. The participant is ready for Question 1.', 'is-complete');
+                    markReadyForAudio('audioPlayer3', 'Question 1');
+                }, 2000, version);
             });
 
             players[2].addEventListener('ended', function() {
@@ -244,11 +290,26 @@
 
             waitPlayer.addEventListener('play', function() {
                 pauseOtherPlayers(waitPlayer);
-                waitStatus.textContent = 'Wait message is playing.';
+                resetStepsFrom(4);
+                setStepDetail(4, 'The “Please wait for further instructions” message is playing.', 'is-active');
             });
 
             waitPlayer.addEventListener('ended', function() {
-                waitStatus.textContent = 'Wait message finished. Participant is waiting for the next task.';
+                setStepComplete(4, true);
+                setStepDetail(4, 'Wait message complete. The participant is waiting for the next task.', 'is-complete');
+            });
+
+            completionButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const stepIndex = Number(this.dataset.stepIndex);
+                    const isComplete = this.getAttribute('aria-pressed') !== 'true';
+                    setStepComplete(stepIndex, isComplete);
+                    setStepDetail(
+                        stepIndex,
+                        isComplete ? 'Marked complete manually by the experimenter.' : 'Marked incomplete manually by the experimenter.',
+                        isComplete ? 'is-complete' : ''
+                    );
+                });
             });
 
             window.addEventListener('pagehide', function() {
