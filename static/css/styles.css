@@ -12,11 +12,180 @@ body h1, body h2, h3, h4 {
     color: red;
 }
 
+.masked-input {
+    -webkit-text-security: disc;
+}
+
 .innerModule {
     background-color: rgb(231, 231, 231);
     padding: 20px;
     margin-bottom: 20px;
 }  
+
+.workflow-step {
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    margin: 10px 0;
+    padding: 13px 15px;
+    border: 1px solid #a7adb2;
+    border-left: 5px solid #59636c;
+    border-radius: 2px;
+    background-color: #f8f9fa;
+    color: #1f252a;
+    font-family: sans-serif;
+    font-size: 1rem;
+    font-weight: 600;
+    line-height: 1.35;
+    text-align: left;
+}
+
+.workflow-step:has(+ br + .innerModule),
+.workflow-step:has(+ br + .condition-group) {
+    margin-bottom: 0;
+    border-bottom-right-radius: 0;
+    border-bottom-left-radius: 0;
+}
+
+.workflow-step + br {
+    display: none;
+}
+
+.workflow-step + br + .innerModule,
+.workflow-step + br + .condition-group {
+    margin: 0 0 14px;
+    border: 1px solid #a7adb2;
+    border-top: 0;
+    border-left: 5px solid #59636c;
+    border-radius: 0 0 2px 2px;
+}
+
+button.workflow-step {
+    cursor: pointer;
+}
+
+button.workflow-step:hover,
+button.workflow-step:focus-visible,
+.workflow-step:has(.workflow-step-trigger:hover),
+.workflow-step:has(.workflow-step-trigger:focus-visible) {
+    border-color: #356c9b;
+    background-color: #eef4f8;
+}
+
+.workflow-step-trigger {
+    flex: 1 1 auto;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+.workflow-step-toggle::after {
+    content: "▾";
+    margin-left: auto;
+    color: #4e5962;
+    transition: transform 0.15s ease;
+}
+
+.workflow-step-toggle[aria-expanded="true"]::after {
+    transform: rotate(180deg);
+}
+
+.workflow-status {
+    display: inline-flex !important;
+    align-items: center;
+    flex: 0 0 auto;
+    margin-left: auto;
+    padding: 3px 9px;
+    border: 1px solid #adb5bd;
+    border-radius: 999px;
+    background-color: #f1f3f5;
+    color: #59636c;
+    font-size: 0.82rem;
+    font-weight: 700;
+}
+
+.workflow-status.is-complete {
+    border-color: #80aa8e;
+    background-color: #dcefe2;
+    color: #2f6844;
+}
+
+.workflow-status-manual {
+    font-family: sans-serif;
+    cursor: pointer;
+}
+
+.workflow-status-manual:hover,
+.workflow-status-manual:focus-visible {
+    border-color: #356c9b;
+    outline: 2px solid #b9d2e5;
+    outline-offset: 1px;
+}
+
+.workflow-subtasks {
+    margin-top: 14px;
+    border-top: 1px solid #c9ced2;
+}
+
+.workflow-subtask {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid #d7dbde;
+    font-family: sans-serif;
+}
+
+.workflow-subtask > span:first-child {
+    flex: 1 1 auto;
+}
+
+.workflow-step-toggle .workflow-status {
+    margin-left: auto;
+}
+
+.workflow-step-toggle:has(.workflow-status)::after {
+    margin-left: 0;
+}
+
+.workflow-step.workflow-current {
+    border-color: #356c9b;
+    border-left-color: #356c9b;
+    background-color: #eaf2f8;
+    box-shadow: 0 0 0 2px rgba(53, 108, 155, 0.14);
+}
+
+.condition-group {
+    margin: 18px 0;
+    padding: 16px;
+    border: 1px solid #a7adb2;
+    border-left: 5px solid #59636c;
+    background-color: #f3f4f5;
+}
+
+.condition-group > h3 {
+    margin-top: 0;
+    font-weight: 600;
+}
+
+.transition-notice {
+    margin: 14px 0;
+    padding: 12px 14px;
+    border-left: 5px solid #356c9b;
+    background-color: #eaf2f8;
+    font-family: sans-serif;
+    font-weight: 600;
+}
+
+.transition-notice[hidden] {
+    display: none;
+}
 
 .task-current {
     border-left: 5px solid #356c9b;
@@ -76,6 +245,44 @@ button.task-completed {
     font-weight: 600;
 }
 
+.sart-wait-message {
+    color: #713f08;
+    font-family: sans-serif;
+    font-weight: 600;
+}
+
+.sart-confirmation {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+}
+
+.sart-confirmation[hidden],
+.sart-protected[hidden] {
+    display: none;
+}
+
+.sart-confirmation input {
+    box-sizing: border-box;
+    max-width: 8rem;
+    padding: 6px;
+}
+
+.sart-session-error {
+    flex-basis: 100%;
+    margin: 0;
+    color: #a12619;
+    font-family: sans-serif;
+    font-weight: 600;
+}
+
+.sart-confirmed-status {
+    color: #2f6844;
+    font-family: sans-serif;
+    font-weight: 600;
+}
+
 .reopen-task {
     margin-left: 10px;
     font-weight: 400;
@@ -83,12 +290,20 @@ button.task-completed {
 
 @media (max-width: 700px) {
     .testModule,
-    .innerModule {
+    .innerModule,
+    .condition-group {
         padding: 14px;
     }
 
     iframe,
     video {
+        max-width: 100%;
+    }
+
+    .sart-confirmation label,
+    .sart-confirmation input,
+    .sart-confirmation button {
+        flex-basis: 100%;
         max-width: 100%;
     }
 }
