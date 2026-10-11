@@ -308,6 +308,13 @@ button.task-completed {
         flex-basis: 100%;
         max-width: 100%;
     }
+
+    .sart-confirmation label,
+    .sart-confirmation input,
+    .sart-confirmation button {
+        flex-basis: 100%;
+        max-width: 100%;
+    }
 }
 
 /* .meter {
