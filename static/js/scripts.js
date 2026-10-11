@@ -1,7 +1,19 @@
 document.addEventListener("DOMContentLoaded", function () {
     document.querySelectorAll(".toggle").forEach(button => {
+        const workflowRow = button.closest(".workflow-step") || button;
+
+        if (workflowRow.classList.contains("workflow-step-toggle")) {
+            let initialDiv = workflowRow.nextElementSibling;
+            while (initialDiv && initialDiv.tagName !== "DIV") {
+                initialDiv = initialDiv.nextElementSibling;
+            }
+            workflowRow.setAttribute("aria-expanded", String(initialDiv?.style.display !== "none"));
+            button.setAttribute("aria-expanded", String(initialDiv?.style.display !== "none"));
+        }
+
         button.addEventListener("click", function () {
-            let nextDiv = this.nextElementSibling;
+            const currentWorkflowRow = this.closest(".workflow-step") || this;
+            let nextDiv = currentWorkflowRow.nextElementSibling;
 
             while (nextDiv && nextDiv.tagName !== "DIV") {
                 nextDiv = nextDiv.nextElementSibling;
@@ -9,7 +21,12 @@ document.addEventListener("DOMContentLoaded", function () {
 
             if (nextDiv) {
                 // Toggle between display: none and display: block
-                nextDiv.style.display = nextDiv.style.display === "none" ? "block" : "none";
+                const isOpening = nextDiv.style.display === "none";
+                nextDiv.style.display = isOpening ? "block" : "none";
+                if (currentWorkflowRow.classList.contains("workflow-step-toggle")) {
+                    currentWorkflowRow.setAttribute("aria-expanded", String(isOpening));
+                    this.setAttribute("aria-expanded", String(isOpening));
+                }
             }
         });
     });

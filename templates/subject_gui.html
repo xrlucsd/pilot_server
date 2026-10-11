@@ -65,7 +65,7 @@
             <p>Thank you for filling out the pre-test information. Please let the experimenter know you have completed this section.</p>
             <form action="/submit_pwd" method="POST" id="experimenterPwd1" autocomplete="off">
                 <label for="password">Password:</label>
-                <input type="password" name="password" id="password"><br><br>
+                <input type="text" name="password" id="password" class="masked-input" autocomplete="off" autocapitalize="none" spellcheck="false"><br><br>
                 <button type="submit">Submit Password</button>
             </form>
             <div id="pwdErrorNotification1" style="display:none; color: red;">Incorrect Password.</div><br>
@@ -101,14 +101,22 @@
         <div class="testModule" style="display:block;">
             <p>After completing a task, please wait for instructions before advancing to the next task.</p>
             <!--TEST -->
-            <button class="toggle nextButton" style="display:none;">SART Task 1</button>
-            <div class="innerModule nextDiv" style="display:none;">
-                <ul>
-                    <li>The test supervisor will now assist you with the first SART.</li>
-                    <li>Complete the tasks as directed.</li>
-                    <li>Press "Task Complete" when you have finished the task.</li>
-                </ul>
-                <button id="sart1Complete" class="taskComplete" onclick="completeTask('sart_1', this)">Task Complete</button>
+            <button class="toggle nextButton task-hold" style="display:none;">SART Task 1</button>
+            <div class="innerModule nextDiv task-hold sart-hold" data-sart-session="1" style="display:none;">
+                <p class="sart-wait-message">Please stop here and wait for the experimenter. The experimenter will start and confirm this SART session.</p>
+                <form class="sart-confirmation" autocomplete="off">
+                    <label for="sartSession1">SART Session:</label>
+                    <input id="sartSession1" name="sart_session" type="number" min="1" max="6" required>
+                    <button type="submit">Confirm</button>
+                    <p class="sart-session-error" role="alert" hidden>Invalid SART session. Ask the experimenter to enter the number for this SART task.</p>
+                </form>
+                <div class="sart-protected" hidden>
+                    <ul>
+                        <li>Complete the task as directed by the experimenter.</li>
+                        <li>Press "Task Complete" when you have finished the task.</li>
+                    </ul>
+                    <button id="sart1Complete" class="taskComplete" onclick="completeTask('sart_1', this)">Task Complete</button>
+                </div>
             </div><br>
 
             <button id="practiceTestButton" class="toggle nextButton" style="display:none;">Practice Test</button>
@@ -170,15 +178,22 @@
                 <button class="taskComplete" id="test1Complete" onclick="completeTask('test_1', this)">Task Complete</button><br>
             </div><br>
 
-            <button class="toggle nextButton" style="display:none;">SART Task 2</button>
-            <div class="innerModule nextDiv" style="display:none;">
-                <ul>
-                    <li>The test supervisor will now assist you with the next SART.</li>
-                    <li>Complete the tasks as directed.</li>
-                    <li>Press "Task Complete" when you have finished the task.</li>
-                </ul>
-                <button class="taskComplete" id="sart2Complete" onclick="completeTask('sart_2', this)">Task Complete</button>
-                
+            <button class="toggle nextButton task-hold" style="display:none;">SART Task 2</button>
+            <div class="innerModule nextDiv task-hold sart-hold" data-sart-session="2" style="display:none;">
+                <p class="sart-wait-message">Please stop here and wait for the experimenter. The experimenter will start and confirm this SART session.</p>
+                <form class="sart-confirmation" autocomplete="off">
+                    <label for="sartSession2">SART Session:</label>
+                    <input id="sartSession2" name="sart_session" type="number" min="1" max="6" required>
+                    <button type="submit">Confirm</button>
+                    <p class="sart-session-error" role="alert" hidden>Invalid SART session. Ask the experimenter to enter the number for this SART task.</p>
+                </form>
+                <div class="sart-protected" hidden>
+                    <ul>
+                        <li>Complete the task as directed by the experimenter.</li>
+                        <li>Press "Task Complete" when you have finished the task.</li>
+                    </ul>
+                    <button class="taskComplete" id="sart2Complete" onclick="completeTask('sart_2', this)">Task Complete</button>
+                </div>
             </div><br>
 
             <!-- NEW SURVEY -->
@@ -191,14 +206,22 @@
 
             <p id="sartComplete2" style="display:none; color:red;">Further instructions will be provided by the experimenter shortly</p>
 
-            <button class="toggle nextButton" style="display:none;">SART Task 3</button>
-            <div class="innerModule nextDiv" style="display:none;">
-                <ul>
-                    <li>The test supervisor will now assist you with the next SART.</li>
-                    <li>Complete the tasks as directed.</li>
-                    <li>Press "Task Complete" when you have finished the task.</li>
-                </ul>
-                <button class="taskComplete" id="sart3Complete" onclick="completeTask('sart_3', this)">Task Complete</button>
+            <button class="toggle nextButton task-hold" style="display:none;">SART Task 3</button>
+            <div class="innerModule nextDiv task-hold sart-hold" data-sart-session="3" style="display:none;">
+                <p class="sart-wait-message">Please stop here and wait for the experimenter. The experimenter will start and confirm this SART session.</p>
+                <form class="sart-confirmation" autocomplete="off">
+                    <label for="sartSession3">SART Session:</label>
+                    <input id="sartSession3" name="sart_session" type="number" min="1" max="6" required>
+                    <button type="submit">Confirm</button>
+                    <p class="sart-session-error" role="alert" hidden>Invalid SART session. Ask the experimenter to enter the number for this SART task.</p>
+                </form>
+                <div class="sart-protected" hidden>
+                    <ul>
+                        <li>Complete the task as directed by the experimenter.</li>
+                        <li>Press "Task Complete" when you have finished the task.</li>
+                    </ul>
+                    <button class="taskComplete" id="sart3Complete" onclick="completeTask('sart_3', this)">Task Complete</button>
+                </div>
             </div><br>
 
             <button class="toggle nextButton" id="surveyIpr2Button" style="display:none;">Survey</button>
@@ -218,14 +241,22 @@
                 <button id='break1Complete' class="taskComplete" onclick="completeTask('break_1', this)">Break Complete</button>
             </div><br>
 
-            <button class="toggle nextButton" style="display:none;">SART Task 4</button>
-            <div class="innerModule nextDiv" style="display:none;">
-                <ul>
-                    <li>The test supervisor will now assist you with the next SART.</li>
-                    <li>Complete the tasks as directed.</li>
-                    <li>Press "Task Complete" when you have finished the task.</li>
-                </ul>
-                <button class="taskComplete" onclick="completeTask('sart_4', this)">Task Complete</button>
+            <button class="toggle nextButton task-hold" style="display:none;">SART Task 4</button>
+            <div class="innerModule nextDiv task-hold sart-hold" data-sart-session="4" style="display:none;">
+                <p class="sart-wait-message">Please stop here and wait for the experimenter. The experimenter will start and confirm this SART session.</p>
+                <form class="sart-confirmation" autocomplete="off">
+                    <label for="sartSession4">SART Session:</label>
+                    <input id="sartSession4" name="sart_session" type="number" min="1" max="6" required>
+                    <button type="submit">Confirm</button>
+                    <p class="sart-session-error" role="alert" hidden>Invalid SART session. Ask the experimenter to enter the number for this SART task.</p>
+                </form>
+                <div class="sart-protected" hidden>
+                    <ul>
+                        <li>Complete the task as directed by the experimenter.</li>
+                        <li>Press "Task Complete" when you have finished the task.</li>
+                    </ul>
+                    <button class="taskComplete" onclick="completeTask('sart_4', this)">Task Complete</button>
+                </div>
             </div><br>
 
             <button class="toggle nextButton" style="display:none;">Test 2</button>
@@ -257,14 +288,22 @@
                 <button id='test2Complete' class="taskComplete" onclick="completeTask('test_2', this)">Task Complete</button><br>
             </div><br>
 
-            <button class="toggle nextButton" style="display:none;">SART Task 5</button>
-            <div class="innerModule nextDiv" style="display:none;">
-                <ul>
-                    <li>The test supervisor will now assist you with the next SART.</li>
-                    <li>Complete the tasks as directed.</li>
-                    <li>Press "Task Complete" when you have finished the task.</li>
-                </ul>
-                <button class="taskComplete" id="sart5Complete" onclick="completeTask('sart_5', this)">Task Complete</button>
+            <button class="toggle nextButton task-hold" style="display:none;">SART Task 5</button>
+            <div class="innerModule nextDiv task-hold sart-hold" data-sart-session="5" style="display:none;">
+                <p class="sart-wait-message">Please stop here and wait for the experimenter. The experimenter will start and confirm this SART session.</p>
+                <form class="sart-confirmation" autocomplete="off">
+                    <label for="sartSession5">SART Session:</label>
+                    <input id="sartSession5" name="sart_session" type="number" min="1" max="6" required>
+                    <button type="submit">Confirm</button>
+                    <p class="sart-session-error" role="alert" hidden>Invalid SART session. Ask the experimenter to enter the number for this SART task.</p>
+                </form>
+                <div class="sart-protected" hidden>
+                    <ul>
+                        <li>Complete the task as directed by the experimenter.</li>
+                        <li>Press "Task Complete" when you have finished the task.</li>
+                    </ul>
+                    <button class="taskComplete" id="sart5Complete" onclick="completeTask('sart_5', this)">Task Complete</button>
+                </div>
             </div><br>
     
             
@@ -277,14 +316,22 @@
             
             <p id="sartComplete5" style="display:none; color:red;">Further instructions will be provided by the experimenter shortly</p>
             
-            <button class="toggle nextButton" style="display:none;">SART Task 6</button>
-            <div class="innerModule nextDiv" style="display:none;">
-                <ul>
-                    <li>The test supervisor will now assist you with the next SART.</li>
-                    <li>Complete the tasks as directed.</li>
-                    <li>Press "Task Complete" when you have finished the task.</li>
-                </ul>
-                <button class="taskComplete" id="sart6Complete" onclick="completeTask('sart_6', this)">Task Complete</button>
+            <button class="toggle nextButton task-hold" style="display:none;">SART Task 6</button>
+            <div class="innerModule nextDiv task-hold sart-hold" data-sart-session="6" style="display:none;">
+                <p class="sart-wait-message">Please stop here and wait for the experimenter. The experimenter will start and confirm this SART session.</p>
+                <form class="sart-confirmation" autocomplete="off">
+                    <label for="sartSession6">SART Session:</label>
+                    <input id="sartSession6" name="sart_session" type="number" min="1" max="6" required>
+                    <button type="submit">Confirm</button>
+                    <p class="sart-session-error" role="alert" hidden>Invalid SART session. Ask the experimenter to enter the number for this SART task.</p>
+                </form>
+                <div class="sart-protected" hidden>
+                    <ul>
+                        <li>Complete the task as directed by the experimenter.</li>
+                        <li>Press "Task Complete" when you have finished the task.</li>
+                    </ul>
+                    <button class="taskComplete" id="sart6Complete" onclick="completeTask('sart_6', this)">Task Complete</button>
+                </div>
             </div><br>
 
             <button class="toggle nextButton" id="surveyIpr4Button" style="display:none;">Survey</button>
@@ -411,6 +458,42 @@
             message.style.display = 'block';
         }
 
+        function initializeSARTConfirmations() {
+            document.querySelectorAll('.sart-hold').forEach(holdContainer => {
+                const form = holdContainer.querySelector('.sart-confirmation');
+                const input = form.querySelector('input[name="sart_session"]');
+                const error = holdContainer.querySelector('.sart-session-error');
+                const protectedContent = holdContainer.querySelector('.sart-protected');
+                const expectedSession = holdContainer.dataset.sartSession;
+
+                form.addEventListener('submit', function(event) {
+                    event.preventDefault();
+                    if (input.value.trim() !== expectedSession) {
+                        error.hidden = false;
+                        input.setAttribute('aria-invalid', 'true');
+                        input.focus();
+                        return;
+                    }
+
+                    const holdHeader = findTaskHeader(holdContainer);
+                    error.hidden = true;
+                    input.removeAttribute('aria-invalid');
+                    form.hidden = true;
+                    holdContainer.querySelector('.sart-wait-message').hidden = true;
+                    protectedContent.hidden = false;
+                    holdContainer.classList.remove('task-hold');
+                    holdHeader?.classList.remove('task-hold');
+
+                    const confirmationStatus = document.createElement('p');
+                    confirmationStatus.className = 'sart-confirmed-status';
+                    confirmationStatus.setAttribute('role', 'status');
+                    confirmationStatus.textContent = `✓ SART Session ${expectedSession} confirmed`;
+                    protectedContent.insertAdjacentElement('afterbegin', confirmationStatus);
+                    setCurrentTask({ header: holdHeader, content: holdContainer });
+                });
+            });
+        }
+
         function initTest0(){ // Practice Test
             test0 = new Test({
                 testNumber: 0, 
@@ -471,6 +554,7 @@
         startTestButton2.addEventListener('click', initTest2);
 
         document.addEventListener('DOMContentLoaded', function(){
+            initializeSARTConfirmations();
             setCurrentTask({
                 header: findTaskHeader(nameForm.closest('.innerModule')),
                 content: nameForm.closest('.innerModule')
