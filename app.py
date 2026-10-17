@@ -24,7 +24,6 @@ from ser_manager3 import SERManager
 from audio_file_manager import AudioFileManager
 from form_manager import FormManager
 from timestamp_manager import TimestampManager
-from room_audio import get_room_audio_steps
 from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
@@ -1515,9 +1514,7 @@ def prs():
 
 @app.route('/room_observation')
 def room_observation() -> Response:
-    audio_dir = os.path.join(app.static_folder, 'room_observation_audio')
-    audio_steps = get_room_audio_steps(audio_dir)
-    return render_template('room_observation.html', audio_steps=audio_steps)
+    return render_template('room_observation.html')
 
 @app.route('/')
 def home() -> Response:
