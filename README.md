@@ -4,7 +4,7 @@
 
 This is the active XR Lab-maintained repository.
 
-**Installation**
+**New Laptop Installation**
 
 **NOTE:** The best way to install ffmpeg and Portaudio on Mac is with HomeBrew. 
 
@@ -20,6 +20,45 @@ Install ffmpeg with:
 Install postgreSQL with:
 
     brew install postgresql@15 
+
+*Python Environment Setup*
+Install pyenv with:
+
+    brew install pyenv
+In the root directory, run the following commands:
+
+    echo 'export PYENV_ROOT="$HOME/.pyenv"' >> ~/.zshrc
+    echo '[[ -d $PYENV_ROOT/bin ]] && export PATH="$PYENV_ROOT/bin:$PATH"' >> ~/.zshrc
+    echo 'eval "$(pyenv init - zsh)"' >> ~/.zshrc
+This creates a file called ".zshrc" that pyenv will use to configure your environment to use the right python version.
+Then reload the shell by running:
+
+    source ~/.zshrc
+Now run:
+
+    pyenv install 3.11.4
+Confirm that it worked by running:
+
+    pyenv versions
+You should see 3.11.4 on the list.
+Configure your environment to use the correct python version by running:
+
+    pyenv global 3.11.4
+Verify it worked by running:
+
+    python --version
+It should say that you are using python version 3.11.4.
+Now cerate a virtual environment using that python version:
+
+    python -m venv venv
+Activate the virtual environment by running:
+    
+    source venv/bin/activate
+Verify the environment uses python 3.11.4:
+
+    python --version
+You can now move on to installing the rest of the project dependencies.
+
 Install whisper with:
 
     pip install git+https://github.com/openai/whisper.git
