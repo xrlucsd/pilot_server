@@ -12,7 +12,7 @@
     <div id="pretestDiv">
         <h2>Pretest</h2>
         <!-- <p>The following is a set of pretest procedures including surveys and baseline data collection. Please complete each as instructed by the test supervisor.</p> -->
-        <button class="toggle">Surveys</button><br>
+        <button class="toggle">Step 1 — Participant Information and Surveys</button><br>
         <div class="testModule" style="display:block;">
             <h2>Participant Information</h2>
             <ul>
@@ -60,7 +60,7 @@
             <button class="taskComplete" onclick="completeTask('survey_2', this)">Task Complete</button>
         </div><br>
 
-        <button class="toggle nextButton task-hold" style="display:none;">Password</button>
+        <button class="toggle nextButton task-hold" style="display:none;">Step 4a — Audio Setup</button>
         <div class="innerModule nextDiv task-hold" style="display:none;">
             <p>Thank you for filling out the pre-test information. Please let the experimenter know you have completed this section.</p>
             <form action="/submit_pwd" method="POST" id="experimenterPwd1" autocomplete="off">
@@ -71,7 +71,7 @@
             <div id="pwdErrorNotification1" style="display:none; color: red;">Incorrect Password.</div><br>
         </div><br>
         
-        <button class="toggle nextButton" style="display:none;">Test Transcription</button>
+        <button class="toggle nextButton" style="display:none;">Step 4b — Test Transcription</button>
         <div class="innerModule nextDiv" style="display:none;">
             <ul>
                 <li>Press "Record" to test your microphone</li>
@@ -82,7 +82,7 @@
             <button class="taskComplete" onclick="completeTask('test_transcription', this)">Task Complete</button>
         </div><br>
 
-        <button class="toggle nextButton" style="display:none;">Mood Q&A</button>
+        <button class="toggle nextButton" style="display:none;">Step 5 — Mood Q&amp;A (SER Baseline)</button>
         <div class="innerModule nextDiv" style="display:none;">
             <ul>
                 <li>Press "Begin" to start recording</li>
@@ -101,7 +101,7 @@
         <div class="testModule" style="display:block;">
             <p>After completing a task, please wait for instructions before advancing to the next task.</p>
             <!--TEST -->
-            <button class="toggle nextButton task-hold" style="display:none;">SART Task 1</button>
+            <button class="toggle nextButton task-hold" style="display:none;">Step 6 — SART Task 1</button>
             <div class="innerModule nextDiv task-hold sart-hold" data-sart-session="1" style="display:none;">
                 <p class="sart-wait-message">Please stop here and wait for the experimenter. The experimenter will start and confirm this SART session.</p>
                 <form class="sart-confirmation" autocomplete="off">
@@ -119,7 +119,7 @@
                 </div>
             </div><br>
 
-            <button id="practiceTestButton" class="toggle nextButton" style="display:none;">Practice Test</button>
+            <button id="practiceTestButton" class="toggle nextButton" style="display:none;">Step 7 — Practice MAT</button>
             <div class="innerModule test-container nextDiv" id="practiceTestContainer" style="display:none;">
                 <p>Instructions</p>
                 <div><ul>
@@ -148,7 +148,7 @@
                 <button class="taskComplete" onclick="completeTask('practice_test', this)">Task Complete</button><br>
             </div><br>
             
-            <button class="toggle nextButton" style="display:none;">Test 1</button>
+            <button class="toggle nextButton" style="display:none;">Step 8 — MAT 1</button>
             <div class="innerModule test-container nextDiv" id="test-container-1" style="display:none;">
                 <p>Instructions</p>
                 <div><ul>
@@ -178,7 +178,7 @@
                 <button class="taskComplete" id="test1Complete" onclick="completeTask('test_1', this)">Task Complete</button><br>
             </div><br>
 
-            <button class="toggle nextButton task-hold" style="display:none;">SART Task 2</button>
+            <button class="toggle nextButton task-hold" style="display:none;">Step 9 — SART Task 2</button>
             <div class="innerModule nextDiv task-hold sart-hold" data-sart-session="2" style="display:none;">
                 <p class="sart-wait-message">Please stop here and wait for the experimenter. The experimenter will start and confirm this SART session.</p>
                 <form class="sart-confirmation" autocomplete="off">
@@ -197,7 +197,7 @@
             </div><br>
 
             <!-- NEW SURVEY -->
-            <button class="toggle nextButton" id="surveyIpr1Button" style="display:none;">Survey</button>
+            <button class="toggle nextButton" id="surveyIpr1Button" style="display:none;">Step 10 — ZIPERS 1</button>
             <div class="innerModule nextDiv" id="surveyIpr1Div" style="display:none;">
                 <p>Please fill out this form.</p>
                 <div id="ipr1Div" style="display:block;"></div><br>
@@ -206,7 +206,7 @@
 
             <p id="sartComplete2" style="display:none; color:red;">Further instructions will be provided by the experimenter shortly</p>
 
-            <button class="toggle nextButton task-hold" style="display:none;">SART Task 3</button>
+            <button class="toggle nextButton task-hold" style="display:none;">Step 12 — SART Task 3</button>
             <div class="innerModule nextDiv task-hold sart-hold" data-sart-session="3" style="display:none;">
                 <p class="sart-wait-message">Please stop here and wait for the experimenter. The experimenter will start and confirm this SART session.</p>
                 <form class="sart-confirmation" autocomplete="off">
@@ -224,14 +224,14 @@
                 </div>
             </div><br>
 
-            <button class="toggle nextButton" id="surveyIpr2Button" style="display:none;">Survey</button>
+            <button class="toggle nextButton" id="surveyIpr2Button" style="display:none;">Step 13 — ZIPERS 2</button>
             <div class="innerModule nextDiv" id="surveyIpr2Div" style="display:none;">
                 <p>Please fill out this form.</p>
                 <div id="ipr2Div" style="display:block;"></div><br>
                 <button class="taskComplete" id="ipr2Complete" onclick="completeTask('survey_ipr2', this)">Task Complete</button>
             </div><br>
 
-            <button class="toggle nextButton" style="display:none;">Break 1</button>
+            <button class="toggle nextButton" style="display:none;">Step 14 — Break 1</button>
             <div class="innerModule nextDiv" id="break1Div" style="display:none">
                 <p>Please watch the following video for 5 minutes.</p>
                 <video id="video1" width="640" height="360" controls>
@@ -241,7 +241,7 @@
                 <button id='break1Complete' class="taskComplete" onclick="completeTask('break_1', this)">Break Complete</button>
             </div><br>
 
-            <button class="toggle nextButton task-hold" style="display:none;">SART Task 4</button>
+            <button class="toggle nextButton task-hold" style="display:none;">Step 15 — SART Task 4</button>
             <div class="innerModule nextDiv task-hold sart-hold" data-sart-session="4" style="display:none;">
                 <p class="sart-wait-message">Please stop here and wait for the experimenter. The experimenter will start and confirm this SART session.</p>
                 <form class="sart-confirmation" autocomplete="off">
@@ -259,7 +259,7 @@
                 </div>
             </div><br>
 
-            <button class="toggle nextButton" style="display:none;">Test 2</button>
+            <button class="toggle nextButton" style="display:none;">Step 16 — MAT 2</button>
             <div class="innerModule nextDiv test-container" id="test-container-2" style="display:none;">
                 <p>Instructions</p>
                 <div><ul>
@@ -288,7 +288,7 @@
                 <button id='test2Complete' class="taskComplete" onclick="completeTask('test_2', this)">Task Complete</button><br>
             </div><br>
 
-            <button class="toggle nextButton task-hold" style="display:none;">SART Task 5</button>
+            <button class="toggle nextButton task-hold" style="display:none;">Step 17 — SART Task 5</button>
             <div class="innerModule nextDiv task-hold sart-hold" data-sart-session="5" style="display:none;">
                 <p class="sart-wait-message">Please stop here and wait for the experimenter. The experimenter will start and confirm this SART session.</p>
                 <form class="sart-confirmation" autocomplete="off">
@@ -307,7 +307,7 @@
             </div><br>
     
             
-            <button class="toggle nextButton" id="surveyIpr3Button" style="display:none;">Survey</button>
+            <button class="toggle nextButton" id="surveyIpr3Button" style="display:none;">Step 18 — ZIPERS 3</button>
             <div class="innerModule nextDiv" id="surveyIpr3Div" style="display:none;">
                 <p>Please fill out this form.</p>
                 <div id="ipr3Div" style="display:block;"></div><br>
@@ -316,7 +316,7 @@
             
             <p id="sartComplete5" style="display:none; color:red;">Further instructions will be provided by the experimenter shortly</p>
             
-            <button class="toggle nextButton task-hold" style="display:none;">SART Task 6</button>
+            <button class="toggle nextButton task-hold" style="display:none;">Step 20 — SART Task 6</button>
             <div class="innerModule nextDiv task-hold sart-hold" data-sart-session="6" style="display:none;">
                 <p class="sart-wait-message">Please stop here and wait for the experimenter. The experimenter will start and confirm this SART session.</p>
                 <form class="sart-confirmation" autocomplete="off">
@@ -334,14 +334,14 @@
                 </div>
             </div><br>
 
-            <button class="toggle nextButton" id="surveyIpr4Button" style="display:none;">Survey</button>
+            <button class="toggle nextButton" id="surveyIpr4Button" style="display:none;">Step 21 — ZIPERS 4</button>
             <div class="innerModule nextDiv" id="surveyIpr4Div" style="display:none;">
                 <p>Please fill out this form.</p>
                 <div id="ipr4Div" style="display:block;"></div><br>
                 <button class="taskComplete" id="ipr4Complete" onclick="completeTask('survey_ipr4', this)">Task Complete</button>
             </div><br>
 
-            <button class="toggle nextButton" style="display:none">Break 2</button>
+            <button class="toggle nextButton" style="display:none">Step 22 — Break 2</button>
             <div class="innerModule nextDiv" id="break2Div" style="display:none">
                 <p>Please watch the following video for 5 minutes</p>
                 <video id="video2" width="640" height="360" controls>
@@ -352,12 +352,12 @@
             </div>
         </div>
     </div><br>
-    <button class="toggle nextButton" id="postTestButton" style="display:none;">Post Test</button>
+    <button class="toggle nextButton" id="postTestButton" style="display:none;">Step 23 — Exit Survey</button>
     <div class="nextDiv" id="postTestDiv" style="display:none;">
         <h2>Post Test</h2>
         <p>Please fill out the exit survey.</p>
         <div class="testModule" style="display:block;">
-            <button class="toggle">Exit Survey</button>
+            <button class="toggle">Step 23 — Exit Survey</button>
             <div class="innerModule" id="exitSurveyDiv" style="display:none;"></div><br><br>
             <button class="taskComplete" id="postTestComplete" onclick="completeTask('exit_survey', this)">Task Complete</button><br>
             <p id="completeMessage" style="display:none;">All tasks are complete. Please wait for further instructions.</p>
