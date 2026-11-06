@@ -1,5 +1,6 @@
 import csv
 import os
+import threading
 from aws_handler import AWSHandler
 from datetime import datetime
 
@@ -22,6 +23,8 @@ class SubjectManager:
         self._subject_last_name = None
         self._subject_email = None
         self._subject_assigned_id = None
+        # Process Audio rewrites the CSV, which must not overlap with an append.
+        self.csv_lock = threading.Lock()
 
     @property
     def subject_assigned_id(self) -> str:
@@ -150,30 +153,63 @@ class SubjectManager:
         """
         metadata_rows = 6
 
-        try:
-            with open(self.csv_file_path, mode='r', newline='', encoding='utf-8') as csvfile:
-                reader = csv.reader(csvfile)
-                file_contents = list(reader)
-                
-                if len(file_contents) < metadata_rows + 1:
-                    print("Metadata rows not found. Enter subject information first.")
-                    return
-                
-        except FileNotFoundError:
-            print("CSV file not found. Enter subject information first.")
-            return
+        with self.csv_lock:
+            try:
+                with open(self.csv_file_path, mode='r', newline='', encoding='utf-8') as csvfile:
+                    reader = csv.reader(csvfile)
+                    file_contents = list(reader)
 
-        filtered_data = {key: value for key, value in data.items() if key in self.headers and value != ""}
-        row = [filtered_data.get(header, "") for header in self.headers]
-        
-        # DEBUG
-        print(row)
+                    if len(file_contents) < metadata_rows + 1:
+                        print("Metadata rows not found. Enter subject information first.")
+                        return
 
-        with open(self.csv_file_path, mode='a', newline='', encoding='utf-8') as csvfile:
-            writer = csv.writer(csvfile)
-            writer.writerow(row)
+            except FileNotFoundError:
+                print("CSV file not found. Enter subject information first.")
+                return
+
+            filtered_data = {key: value for key, value in data.items() if key in self.headers and value != ""}
+            row = [filtered_data.get(header, "") for header in self.headers]
+
+            # DEBUG
+            print(row)
+
+            with open(self.csv_file_path, mode='a', newline='', encoding='utf-8') as csvfile:
+                writer = csv.writer(csvfile)
+                writer.writerow(row)
 
         print(f"Data has been successfully appended to {self.csv_file_path}.")
+
+    def update_transcription(self, csv_file_path: str, audio_file: str, transcription: str) -> None:
+        """
+        Fill in the Transcription cell of the row for an audio file.
+        Args:
+            csv_file_path (str): The participant's CSV, captured when the recording was queued.
+            audio_file (str): The Audio_File value identifying the row.
+            transcription (str): The text to store.
+        """
+        with self.csv_lock:
+            with open(csv_file_path, mode='r', newline='', encoding='utf-8') as csvfile:
+                rows = list(csv.reader(csvfile))
+
+            audio_column = self.headers.index('Audio_File')
+            transcription_column = self.headers.index('Transcription')
+            header_row = rows.index(self.headers)
+            matches = [row for row in rows[header_row + 1:] if len(row) == len(self.headers) and row[audio_column] == audio_file]
+
+            if not matches:
+                print(f"No row found for {audio_file}; transcription not stored.")
+                return
+
+            for row in matches:
+                row[transcription_column] = transcription
+
+            # Replace the file in one step so a crash cannot leave a partial CSV.
+            temp_path = f"{csv_file_path}.tmp"
+            with open(temp_path, mode='w', newline='', encoding='utf-8') as csvfile:
+                csv.writer(csvfile).writerows(rows)
+            os.replace(temp_path, csv_file_path)
+
+        print(f"Transcription stored for {audio_file}.")
 
     def load_data(self) -> list[dict]:
         """Load and return all data from the CSV file."""

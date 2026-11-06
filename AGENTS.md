@@ -2,11 +2,12 @@
 
 ## Project overview
 
-- XR Lab experiment controller: Python 3.11 (requirements target 3.11.4), Flask/Jinja, plain JavaScript/CSS, PyAudio, Whisper, PyTorch/Transformers, OSC, GoDirect, and HDF5/CSV storage.
+- XR Lab experiment controller: Python 3.11 (requirements target 3.11.4), Flask/Jinja, plain JavaScript/CSS, PyAudio, whisper.cpp (`pywhispercpp`), PyTorch/Transformers, OSC, GoDirect, and HDF5/CSV storage.
 - `app.py` is the entry point and route/orchestration module. It creates global managers for one active participant, test, recorder, and sensor streams. Importing it initializes audio, binds an OSC socket, and loads models; do not import it as a harmless smoke check.
 - `templates/index.html` is the experiment dashboard; it opens `templates/subject_gui.html` through `/subject_gui` in a separate browser window. Subject progression/timers live in browser JavaScript. HTTP requests mutate shared server state; `/stream` sends transient SSE notices to the experiment dashboard. Room/PRS windows read task context from `localStorage`.
 - `static/js/scripts.js` contains shared browser helpers; `static/css/` and other `static/` folders contain styling, audio, and video. Much workflow logic remains inline in templates, and PRS HTML is inline in `app.py`.
 - Root `*_manager.py` modules handle subjects, questions, recording, transcription, forms, and files. Active sensor implementations are `emotibit_streamer_2.py` and `vernier_manager.py`; `gdx/` contains device support code.
+- `transcription_manager.py` runs two whisper.cpp models that load in the background into `models/` (gitignored). `base.en` transcribes MAT answers synchronously using `hints.txt` and `normalize_digits`; `medium.en` transcribes PRS, Room Observation, and SER baseline responses only when the experimenter clicks Process Audio, which fills their `Transcription` cell in the participant CSV. No audio is processed in the background while the experiment runs. Keep `MODEL_SIZES` in step with the models in use: whisper.cpp segfaults on a truncated model file.
 - `test_files/` contains question JSON; `surveys/` contains form links; `SER_MODEL/` and `label_maps/` support emotion classification. `subject_data/` holds participant records/results; `tmp/` holds working audio. Vernier outputs use `respiratory_data/` within the participant folder.
 - `metrics_unittests/` contains a standalone metrics check and sample CSV. Root Vernier test scripts exercise real hardware. PostgreSQL/AWS helper modules exist but are not wired into the active dashboard workflow.
 
@@ -22,7 +23,6 @@ If creating a new environment, use `python3.11 -m venv venv` first. Install depe
 
 ```sh
 python -m pip install -r requirements.txt
-python -m pip install git+https://github.com/openai/whisper.git
 ```
 
 PortAudio and ffmpeg are external prerequisites; on macOS: `brew install portaudio ffmpeg`. PostgreSQL is needed only for work using the database helper, not the active dashboard path.
@@ -33,6 +33,7 @@ PortAudio and ffmpeg are external prerequisites; on macOS: `brew install portaud
 | Existing metrics check | `(cd metrics_unittests && PYTHONDONTWRITEBYTECODE=1 python metrics_unittest.py)` — reads local `emotibit_data.csv`; verified passing. |
 | Explicit pytest check | `PYTHONDONTWRITEBYTECODE=1 python -m pytest -q -p no:cacheprovider metrics_unittests/metrics_unittest.py` — currently fails because `bi_values` and `ppg_values` fixtures are missing. Do not report this as a passing suite. |
 | Targeted Python syntax | `python -c 'import ast, pathlib, sys; [ast.parse(pathlib.Path(p).read_text(), filename=p) for p in sys.argv[1:]]' app.py` — replace `app.py` with changed Python paths; does not import the application or write bytecode. |
+| Transcription check | `PYTHONDONTWRITEBYTECODE=1 python -m pytest -q -p no:cacheprovider transcription_unittests/transcription_unittest.py` — needs no microphone or models. |
 | Patch whitespace | `git diff --check` |
 | Manual Vernier check | `python vernier_godirect_test.py` or `python vernier_gdx_test.py` — only with intended hardware available; these are device exercises, not isolated automated tests. |
 | Lint / build | No configured linter, formatter, frontend build, or packaging build command. Do not invent `npm` commands or install tooling just to claim these checks passed. |
