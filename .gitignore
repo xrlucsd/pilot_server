@@ -21,8 +21,6 @@ env/
 /tests/
 /cache/
 /static/videos/*
-/static/room_observation_audio/*
-!/static/room_observation_audio/.gitkeep
 !/static/videos/.gitkeep
 !static/css/
 !static/js/
