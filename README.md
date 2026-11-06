@@ -22,25 +22,48 @@ Install postgreSQL with:
     brew install postgresql@15 
 
 *Python Environment Setup*
-Install pyenv with:
+
+**Step 1: Disable Conda.** If Conda is installed, it can interfere with the Python build and override the pyenv Python. If your terminal prompt does not start with (base) and Conda is not installed, skip to Step 2.
+
+Stop Conda from activating automatically in new terminals:
+
+    conda config --set auto_activate_base false
+Deactivate it in your current terminal:
+
+    conda deactivate
+If you still see (base), run `conda deactivate` again until it is gone.
+
+**Step 2: Install pyenv.**
 
     brew install pyenv
-In the root directory, run the following commands:
-    touch .zshrc
+Run the following commands from any directory:
+
+    touch ~/.zshrc
     echo 'export PYENV_ROOT="$HOME/.pyenv"' >> ~/.zshrc
     echo '[[ -d $PYENV_ROOT/bin ]] && export PATH="$PYENV_ROOT/bin:$PATH"' >> ~/.zshrc
     echo 'eval "$(pyenv init - zsh)"' >> ~/.zshrc
-This creates a file called ".zshrc" that pyenv will use to configure your environment to use the right python version.
+This adds pyenv to ".zshrc", the file your terminal uses to configure your environment, so that it uses the right python version.
 Then reload the shell by running:
 
     source ~/.zshrc
-Now run:
 
-    pyenv install 3.11.4
+**Step 3: Install OpenSSL and Python 3.11.4.** Do not run a plain `pyenv install 3.11.4`. It can fail with `No available formula with the name "openssl@1.1"` or `ModuleNotFoundError: No module named '_ssl'`, because Homebrew no longer provides OpenSSL 1.1. The commands below point the build at OpenSSL 3.0 instead.
+
+Install the libraries Python needs. Homebrew may warn that openssl@3.0 is deprecated; this is safe to ignore as long as the install finishes.
+
+    brew install openssl@3.0 readline xz
+Then copy and run the following as a single command. `--force` replaces any broken copy of 3.11.4 left by an earlier failed install.
+
+    PYTHON_BUILD_HOMEBREW_OPENSSL_FORMULA=openssl@3.0 \
+    PYTHON_CONFIGURE_OPTS="--with-openssl=$(brew --prefix openssl@3.0) --with-openssl-rpath=auto" \
+    pyenv install --force 3.11.4
 Confirm that it worked by running:
 
     pyenv versions
 You should see 3.11.4 on the list.
+
+**Step 4: Select Python 3.11.4 and create the virtual environment.**
+
 Configure your environment to use the correct python version by running:
 
     pyenv global 3.11.4
@@ -48,7 +71,11 @@ Verify it worked by running:
 
     python --version
 It should say that you are using python version 3.11.4.
-Now cerate a virtual environment using that python version:
+Verify that Python was built with OpenSSL by running:
+
+    python -c "import ssl; print(ssl.OPENSSL_VERSION)"
+It should print a version starting with OpenSSL 3.0. If it shows an error, make sure (base) is gone and repeat Step 3.
+Now create a virtual environment using that python version:
 
     python -m venv venv
 Activate the virtual environment by running:
