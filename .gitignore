@@ -17,6 +17,7 @@ env/
 /utilities/
 /wav2vec2_checkpoints/
 /model/
+/models/
 /tests/
 /cache/
 /static/videos/*

@@ -20,6 +20,8 @@ class RecordingManager():
         self.stream_ready_event = threading.Event()
         self.recording_thread = None
         self._stream_is_active = False
+        # True while a Room Observation or PRS window owns the recording.
+        self.task_audio_active = False
         self._recording_file = recording_file
         self.device_index = 0
         self.audio_devices = self.fetch_audio_devices()
@@ -64,7 +66,11 @@ class RecordingManager():
     def stream_is_active(self, value) -> None:
         self._stream_is_active = value
 
-    def start_recording(self) -> None:
+    def start_recording(self, task_audio=False) -> None:
+        # Anything still recording was never submitted, so it must not reach the
+        # new recording's file. Every recording writes to the same temporary file.
+        self.cancel_recording()
+        self.task_audio_active = task_audio
         self.stop_event.clear()
         self.recording_started_event.set()
 
@@ -89,7 +95,25 @@ class RecordingManager():
             print(f"Warning: Device index {self.device_index} not valid, using first available device")
             self.device_index = valid_indices[0] if valid_indices else 0
 
+    def cancel_recording(self) -> None:
+        """Stop any active recording without writing its audio to the recording file."""
+        self.task_audio_active = False
+        if not self.recording_thread or not self.recording_thread.is_alive():
+            return
+
+        print("Discarding a recording that was still running.")
+        # Replacing the event is how the thread knows to discard: see record_thread.
+        active_stop_event = self.stop_event
+        self.stop_event = threading.Event()
+        active_stop_event.set()
+        self.recording_thread.join(timeout=5.0)
+
+        self.recording_started_event.clear()
+        self.stream_ready_event.clear()
+        self.stream_is_active = False
+
     def stop_recording(self) -> None:
+        self.task_audio_active = False
         self.stop_event.set()
 
         # Prevent hanging.
@@ -114,13 +138,17 @@ class RecordingManager():
                     print(f"Error resetting audio system: {e}")
 
     def record_thread(self) -> None:
+        # The WAV header must match the capture rate, even if the device changes mid-recording.
+        rate = self.sample_rate
+        stop_event = self.stop_event
+
         # Validate device before attempting to open stream
         try:
             self._validate_device_index()
 
             stream = self.audio.open(format=pyaudio.paInt16, 
                                 channels=1, 
-                                rate=self.sample_rate, 
+                                rate=rate,
                                 input=True, 
                                 input_device_index=self.device_index,
                                 frames_per_buffer=1024)
@@ -136,7 +164,7 @@ class RecordingManager():
 
         self.recording_started_event.set()
 
-        while not self.stop_event.is_set():
+        while not stop_event.is_set():
             try:
                 data = stream.read(1024)
                 frames.append(data)
@@ -150,11 +178,15 @@ class RecordingManager():
         except Exception as e:
             print(f"Error closing stream: {e}")
 
+        if stop_event is not self.stop_event:
+            print("Recording discarded.")
+            return
+
         try:
             with wave.open(self.recording_file, 'wb') as wf:
                 wf.setnchannels(1)
                 wf.setsampwidth(self.audio.get_sample_size(pyaudio.paInt16))
-                wf.setframerate(44100)
+                wf.setframerate(rate)
                 wf.writeframes(b''.join(frames))
                 print(f"Recording stopped, saved to {self.recording_file}")
         except Exception as e:

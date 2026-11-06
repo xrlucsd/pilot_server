@@ -2,8 +2,6 @@
 # Requirements for Python 3.11.4
 # System dependencies (install before pip):
 #   brew install portaudio ffmpeg postgresql@15
-# Whisper (install separately):
-#   pip install git+https://github.com/openai/whisper.git
 # ---------------------------------------------------------------
 
 # --- Web framework ---
@@ -32,6 +30,8 @@ h5py==3.11.0
 # --- ML / deep learning ---
 torch==2.5.1
 transformers==4.48.0
+# whisper-cpp-pybind==0.1.3
+pywhispercpp==1.5.1       # whisper.cpp; the macOS arm64 wheel includes Metal
 
 # --- Database ---
 psycopg2-binary==2.9.10

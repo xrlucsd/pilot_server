@@ -450,6 +450,7 @@
         let breakButtons = document.getElementsByClassName('breakButton');
         let testNumber; // NOTE: testNumber is set with test_manager.current_test_index which starts at 0.
         let eventMarker;
+        let test0;
         let test1;
         let test2;
         
@@ -594,6 +595,23 @@
 
             ipr4Complete.addEventListener('click', function(){
                 setEventMarker('subject_idle');
+            });
+
+            // Leaving a MAT early must not leave its timers running, since each
+            // time limit restarts the recording.
+            document.querySelectorAll('.taskComplete').forEach(button => {
+                button.addEventListener('click', function() {
+                    [test0, test1, test2].forEach(test => {
+                        if (test && test.testStarted) {
+                            test.abandon();
+                        }
+                    });
+                });
+            });
+
+            // A refreshed or closed window can no longer stop its own recording.
+            window.addEventListener('pagehide', function() {
+                navigator.sendBeacon('/cancel_recording');
             });
 
             serComplete.addEventListener('click', function() {
@@ -1356,6 +1374,9 @@
             processResult() {
                 // Callback for processAnswer()
                 if (this.testEnded){
+                    // An answer still processing when the test ended restarts the recording.
+                    fetch('/cancel_recording', { method: 'POST' })
+                        .catch(error => console.error('Unable to cancel recording:', error));
                     return;
                 }
 
@@ -1413,6 +1434,17 @@
                 this.currentVolumeStage = 0;
 
                 return;
+            }
+
+            abandon() {
+                this.stopClock();
+                this.pauseCountdown();
+                this.clearCountdownStatus();
+                this.tickingSound.stop();
+                this.testEnded = true;
+                this.testStarted = false;
+                this.pendingTimerExpiration = false;
+                this.submitAnswerButton.disabled = true;
             }
 
             endTest() {

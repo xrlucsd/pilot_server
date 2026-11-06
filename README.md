@@ -26,7 +26,7 @@ Install pyenv with:
 
     brew install pyenv
 In the root directory, run the following commands:
-
+    touch .zshrc
     echo 'export PYENV_ROOT="$HOME/.pyenv"' >> ~/.zshrc
     echo '[[ -d $PYENV_ROOT/bin ]] && export PATH="$PYENV_ROOT/bin:$PATH"' >> ~/.zshrc
     echo 'eval "$(pyenv init - zsh)"' >> ~/.zshrc
@@ -59,31 +59,30 @@ Verify the environment uses python 3.11.4:
     python --version
 You can now move on to installing the rest of the project dependencies.
 
-Install whisper with:
-
-    pip install git+https://github.com/openai/whisper.git
-Install all other packages with:
+Install all packages with:
 
     pip install -r requirements.txt
+The Whisper models (base.en and medium.en, about 1.7 GB in total) download to models/ the first time the server starts. The Launch Subject Dashboard button is disabled until they have loaded.
+
 Retrieve the SER model here: https://drive.google.com/drive/folders/1w3-QJEl_pzuIkiOuDUejkFp9x8Mfs4LF?usp=drive_link
 
-Place the SER_MODEL folder at the root of the server: /EXP_SERVER/.
+Place the SER_MODEL folder at the root of the server: /pilot_server
 
 Retrieve the video files here: https://drive.google.com/drive/folders/1nBtfuXfNhhzsi4oFjVRUnYrbLneVJI7c?usp=drive_link
 
-Place the videos folder inside the static folder of the server: /EXP_SERVER/static/.
+Place the videos folder inside the static folder of the server: /pilot_server/static/.
 
 **Instructions for server**
 
 To run the server, simply open a terminal, navigate to the root folder and type:
-python exp_server.py
+python app.py
 
 You should see the following result in Terminal: 
  
-    * Serving Flask app 'exp_serve'
+    * Serving Flask app 'app'
     * Debug mode: on
     WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
-    * Running on http://127.0.0.1:5000
+    * Running on http://127.0.0.1:8000
     Press CTRL+C to quit
     * Restarting with watchdog (fsevents)
     * Debugger is active!
