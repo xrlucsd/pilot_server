@@ -8,11 +8,23 @@ class FormManager:
     def __init__(self) -> None:
         self._surveys_file = "surveys/surveys.json"
         self._added_surveys_file = "surveys/added_surveys.json"
+        self._subjects_file = "subject_data/subjects.json"
         self._surveys = self.load_surveys()
         self._formatted_surveys = []
         self._added_surveys = []
+        self.initialize_subjects_file()
         print("Form Manager initialized...")
         print("Form Manager's surveys file set to 'surveys/surveys.json'")
+
+    def initialize_subjects_file(self) -> None:
+        """Create an empty subjects file if one doesn't exist. Never overwrites an existing file."""
+        if os.path.exists(self._subjects_file):
+            return
+
+        print(f"{self._subjects_file} does not exist. Creating new file...")
+        os.makedirs(os.path.dirname(self._subjects_file), exist_ok=True)
+        with open(self._subjects_file, 'w') as file:
+            json.dump({"subjects": {}}, file, indent=4)
 
     @property
     def added_surveys(self) -> list:
@@ -234,7 +246,7 @@ class FormManager:
         return self.customize_form_url(survey_url, subject_id)
     
     def get_subject_name(self, email: str) -> str:
-        with open('subject_data/subjects.json', 'r') as file:
+        with open(self._subjects_file, 'r') as file:
             subject_objs = json.load(file)
             for key, value in subject_objs['subjects'].items():
                 if key == email:  # Email is now the key, no need to check inside the value
@@ -252,19 +264,11 @@ class FormManager:
             email (str): The subject's email address.
         """
 
-        file_path = 'subject_data/subjects.json'
+        file_path = self._subjects_file
 
-        if not os.path.exists(file_path):
-            print("subject_data/subjects.json does not exist. Creating new file...")
-            os.makedirs(os.path.dirname(file_path), exist_ok=True)
-            with open(file_path, 'w') as file:
-                json.dump({"subjects": {}}, file, indent=4)
-
-            with open(file_path, 'r') as file:
-                subject_objs = json.load(file)
-        else:
-            with open(file_path, 'r') as file:
-                subject_objs = json.load(file)
+        self.initialize_subjects_file()
+        with open(file_path, 'r') as file:
+            subject_objs = json.load(file)
 
         if "subjects" not in subject_objs:
             subject_objs["subjects"] = {}

@@ -1,77 +1,261 @@
-import whisper
-import warnings
-import threading
+import os
 import re
+import subprocess
+import tempfile
+import threading
+import time
+import wave
+from pathlib import Path
+
+import _pywhispercpp
+import numpy as np
+from pywhispercpp.model import Model
+from pywhispercpp.utils import download_model
+from scipy.signal import resample_poly
+
+ROOT = Path(__file__).parent
+MODELS_DIR = ROOT / "models"
+HINTS_FILE = ROOT / "hints.txt"
+SAMPLE_RATE = 16000     # whisper.cpp expects 16 kHz mono float32
+MIN_AUDIO_SECONDS = 0.25
+
+FAST_MODEL = "base.en"      # MAT answers: must return quickly
+LONG_MODEL = "medium.en"    # PRS, Room Observation, and SER responses: Process Audio only
+
+# whisper.cpp does not validate model files: a partial download loads without
+# error and then segfaults the whole server on first use. Compare against the
+# published size of each model (a model missing from this table is not checked).
+MODEL_SIZES = {
+    "base.en": 147964211,
+    "medium.en": 1533774781,
+}
+
+DIGIT_WORDS = {
+    "zero": 0, "oh": 0, "o": 0,
+    "one": 1, "two": 2, "three": 3, "four": 4, "five": 5,
+    "six": 6, "seven": 7, "eight": 8, "nine": 9,
+}
+TEEN_WORDS = {
+    "ten": 10, "eleven": 11, "twelve": 12, "thirteen": 13, "fourteen": 14, "fifteen": 15,
+    "sixteen": 16, "seventeen": 17, "eighteen": 18, "nineteen": 19,
+}
+TENS_WORDS = {
+    "twenty": 20, "thirty": 30, "forty": 40, "fifty": 50,
+    "sixty": 60, "seventy": 70, "eighty": 80, "ninety": 90,
+}
+SCALE_WORDS = ("hundred", "thousand")
+NUMBER_WORDS = {**DIGIT_WORDS, **TEEN_WORDS, **TENS_WORDS}
+
+
+WHISPER_WARNING_LEVELS = (3, 4)  # ggml's warning and error log levels
+
+
+def log_whisper_message(level, message):
+    """Keep whisper.cpp's routine logs out of the server output, but not its problems."""
+    if level in WHISPER_WARNING_LEVELS:
+        print(f"whisper.cpp: {message.strip()}")
+
+
+def normalize_digits(text):
+    """
+    Reduce a spoken MAT answer to a plain digit string, dropping whitespace,
+    punctuation, and any other non-number text.
+
+    Digits said one at a time are joined ("Four, one. 3-5" -> "4135"), and
+    compound numbers keep their value ("nine hundred ninety-six" -> "996",
+    "nine ninety six" -> "996", "one thousand and forty-two" -> "1042").
+    """
+    tokens = [
+        token for token in re.findall(r"[a-z]+|\d+", text.lower())
+        if token.isdigit() or token in NUMBER_WORDS or token in SCALE_WORDS
+    ]
+
+    if any(token in SCALE_WORDS for token in tokens):
+        total = 0
+        current = 0
+        for token in tokens:
+            if token == "hundred":
+                current = max(current, 1) * 100
+            elif token == "thousand":
+                total += max(current, 1) * 1000
+                current = 0
+            else:
+                current += int(token) if token.isdigit() else NUMBER_WORDS[token]
+        return str(total + current)
+
+    digits = []
+    index = 0
+    while index < len(tokens):
+        token = tokens[index]
+        index += 1
+        if token in TENS_WORDS:
+            value = TENS_WORDS[token]
+            # "ninety six" is one number, unlike "nine six".
+            if index < len(tokens):
+                next_value = DIGIT_WORDS.get(tokens[index], tokens[index])
+                if str(next_value) in "123456789" and len(str(next_value)) == 1:
+                    value += int(next_value)
+                    index += 1
+            digits.append(str(value))
+        elif token.isdigit():
+            digits.append(token)
+        else:
+            digits.append(str(NUMBER_WORDS[token]))
+    return "".join(digits)
+
+
+def read_hints():
+    """
+    Join the non-comment lines of hints.txt into Whisper's initial prompt.
+    Read on every call so edits apply without restarting the server.
+    """
+    if not HINTS_FILE.exists():
+        return ""
+    lines = HINTS_FILE.read_text(encoding="utf-8").splitlines()
+    return " ".join(line.strip() for line in lines if line.strip() and not line.lstrip().startswith("#"))
+
+
+def load_audio(audio_file):
+    """Read a 16-bit PCM WAV file as 16 kHz mono float32 samples."""
+    with wave.open(str(audio_file), "rb") as wav_file:
+        if wav_file.getsampwidth() != 2:
+            raise ValueError(f"Expected 16-bit audio: {audio_file}")
+        channels = wav_file.getnchannels()
+        sample_rate = wav_file.getframerate()
+        frames = wav_file.readframes(wav_file.getnframes())
+
+    audio = np.frombuffer(frames, dtype=np.int16).astype(np.float32) / 32768.0
+    if channels > 1:
+        audio = audio.reshape(-1, channels).mean(axis=1)
+    if sample_rate != SAMPLE_RATE and audio.size:
+        divisor = np.gcd(sample_rate, SAMPLE_RATE)
+        audio = resample_poly(audio, SAMPLE_RATE // divisor, sample_rate // divisor).astype(np.float32)
+    return audio
+
+
+def performance_core_count():
+    """whisper.cpp slows down on efficiency cores, so only count performance cores."""
+    try:
+        output = subprocess.run(
+            ["sysctl", "-n", "hw.perflevel0.physicalcpu"],
+            capture_output=True, text=True, check=True, timeout=5,
+        ).stdout
+        return max(1, int(output.strip()))
+    except (OSError, ValueError, subprocess.SubprocessError):
+        return min(4, os.cpu_count() or 4)
+
+
+def ensure_model_file(model_name):
+    """
+    Download a model if it is missing or incomplete. The file only reaches
+    models/ once complete, so an interrupted download cannot crash a later run.
+    """
+    expected_size = MODEL_SIZES.get(model_name)
+    target = MODELS_DIR / f"ggml-{model_name}.bin"
+    if target.exists() and expected_size in (None, target.stat().st_size):
+        return
+
+    MODELS_DIR.mkdir(exist_ok=True)
+    print(f"Downloading Whisper model {model_name}...")
+    with tempfile.TemporaryDirectory(dir=MODELS_DIR) as download_dir:
+        downloaded = Path(download_model(model_name, download_dir=download_dir))
+        if expected_size not in (None, downloaded.stat().st_size):
+            raise RuntimeError(f"Download of {model_name} is incomplete.")
+        os.replace(downloaded, target)
+
 
 class TranscriptionManager:
     def __init__(self):
         """
         Initializes the TranscriptionManager class.
 
-        This constructor performs the following actions:
-        - Suppresses specific warnings related to future changes and FP16 support on CPU.
-        - Loads a Whisper model with the "base" configuration.
-        - Converts the model to use 32-bit floating point precision.
-        - Moves the model to the CPU.
-        - Initializes the result attribute to None.
-        - Creates a threading lock for managing concurrent access.
+        Two whisper.cpp models load in a background thread so the server can
+        start right away; status() reports when they are ready.
 
-        Attributes:
-            model (whisper.Model): The Whisper model used for transcription.
-            result (None): Placeholder for the transcription result.
-            lock (threading.Lock): A lock to ensure thread-safe operations.
+        - The fast model transcribes MAT answers and the audio check while the
+          participant waits. transcribe() returns the result directly.
+        - The long model transcribes longer responses once the experimenter
+          clicks Process Audio. Nothing else runs during the experiment.
+
+        whisper.cpp contexts are not thread-safe, so each model only runs one
+        transcription at a time.
         """
-
-        warnings.filterwarnings("ignore", category=FutureWarning)
-        warnings.filterwarnings("ignore", message="FP16 is not supported on CPU; using FP32 instead")
-
-        self.model = whisper.load_model("base")
-        self.model = self.model.float()
-        self.model = self.model.to("cpu")
-        self.result = None
-        self.lock = threading.Lock()
+        self.model_params = {
+            "n_threads": performance_core_count(),
+            "language": "en",
+            "print_progress": False,
+            "print_realtime": False,
+            # False leaves stderr alone. pywhispercpp's redirect covers the whole
+            # process, which would hide Flask's output while a model loads.
+            "redirect_whispercpp_logs_to": False,
+            "context_params": {"use_gpu": True, "flash_attn": True},
+        }
+        self.models = {FAST_MODEL: None, LONG_MODEL: None}
+        self.model_status = {FAST_MODEL: "loading", LONG_MODEL: "loading"}
+        self.model_errors = {}
+        # Set when loading has finished for that model, whether or not it worked.
+        self.model_settled = {FAST_MODEL: threading.Event(), LONG_MODEL: threading.Event()}
         self.operation_lock = threading.Lock()
         self.active_operation = None
+        self.long_lock = threading.Lock()
 
-    def switch_model(self, model_name):
-        try:
-            model = whisper.load_model(model_name)
-            model = model.float()
-            model = model.to("cpu")
-            with self.lock:
-                self.model = model
-            print(f"Model switched to {model_name}.")
+        _pywhispercpp.whisper_log_set(log_whisper_message)
+        threading.Thread(target=self._load_models, daemon=True).start()
 
-        except FileNotFoundError:
-            print(f"Model {model_name} not found. Please ensure that the model is in the correct directory and that the model name is correct.")
+    def status(self):
+        """Report per-model load state for the experiment dashboard."""
+        statuses = dict(self.model_status)
+        return {
+            "models": statuses,
+            "ready": all(state == "ready" for state in statuses.values()),
+            "failed": any(state == "failed" for state in statuses.values()),
+            "errors": dict(self.model_errors),
+        }
 
-    def reset(self, lock_timeout=0.1):
+    def _load_models(self):
+        for model_name in (FAST_MODEL, LONG_MODEL):
+            try:
+                ensure_model_file(model_name)
+                start = time.perf_counter()
+                model = Model(model_name, models_dir=str(MODELS_DIR), **self.model_params)
+                # The first inference compiles GPU shaders; do that before a participant waits on it.
+                model.transcribe(np.zeros(SAMPLE_RATE, dtype=np.float32), initial_prompt="")
+                self.models[model_name] = model
+                self.model_status[model_name] = "ready"
+                print(f"Whisper model {model_name} ready in {time.perf_counter() - start:.1f} seconds.")
+            except Exception as e:
+                self.model_status[model_name] = "failed"
+                self.model_errors[model_name] = str(e)
+                print(f"Whisper model {model_name} failed to load: {e}")
+            finally:
+                self.model_settled[model_name].set()
+
+    def _decode(self, model_name, audio, initial_prompt=""):
         """
-        Clear the last result without waiting indefinitely for active inference.
-
-        Returns False when Whisper is busy so callers can continue without
-        accessing or replacing the shared model during transcription.
+        Run one model and return its text without bracketed non-speech labels
+        such as [BLANK_AUDIO] or (dramatic music).
         """
-        acquired = self.lock.acquire(timeout=lock_timeout)
-        if not acquired:
-            print("Whisper model is still busy; skipping reset.")
-            return False
+        self.model_settled[model_name].wait()
+        model = self.models[model_name]
+        if model is None:
+            raise RuntimeError(f"Whisper model {model_name} is not available.")
 
-        try:
-            self.result = None
-            return True
-        finally:
-            self.lock.release()
+        # Always pass initial_prompt: pywhispercpp keeps params between calls,
+        # so an empty string is what clears the hints.
+        segments = model.transcribe(audio, initial_prompt=initial_prompt)
+        text = " ".join(segment.text.strip() for segment in segments)
+        return re.sub(r"\[[^\]]*\]|\([^)]*\)", " ", text).strip()
 
-    def transcribe(self, audio_file, timeout_seconds=15):
+    def transcribe(self, audio_file, timeout_seconds=15, digits_only=True):
         """
-        Starts the transcription process for the given audio file.
-        This method creates a new thread to handle the transcription of the provided
-        audio file. It waits for the transcription to complete and then returns the result.
+        Transcribes a short recording with the fast model and waits for the result.
         Args:
             audio_file (str): The path to the audio file to be transcribed.
+            timeout_seconds (int): How long to wait before giving up.
+            digits_only (bool): True for MAT answers, which use the hints and
+                return a plain digit string. False returns ordinary text.
         Returns:
-            str: The transcription result of the audio file, or None if filtered out.
+            str: The transcription result of the audio file, or None if nothing usable was heard.
         """
         with self.operation_lock:
             if self.active_operation and self.active_operation["thread"].is_alive():
@@ -81,7 +265,7 @@ class TranscriptionManager:
             operation = {"done": threading.Event(), "result": None}
             operation["thread"] = threading.Thread(
                 target=self._run_transcription,
-                args=(audio_file, operation),
+                args=(audio_file, digits_only, operation),
                 daemon=True,
             )
             self.active_operation = operation
@@ -93,119 +277,51 @@ class TranscriptionManager:
 
         return operation["result"]
 
-    def _run_transcription(self, audio_file, operation):
+    def _run_transcription(self, audio_file, digits_only, operation):
         try:
-            with self.lock:
-                result = self.model.transcribe(
-                    audio_file,
-                    language="en",
-                    no_speech_threshold=0.6,
-                    logprob_threshold=-1.0,
-                    condition_on_previous_text=False,
-                )
-
-            text = result["text"].strip()
-            if text and not self._is_likely_invalid(text):
-                operation["result"] = text
+            start = time.perf_counter()
+            audio = load_audio(audio_file)
+            if audio.size >= SAMPLE_RATE * MIN_AUDIO_SECONDS:
+                if digits_only:
+                    operation["result"] = self._transcribe_digits(audio)
+                else:
+                    operation["result"] = self._decode(FAST_MODEL, audio) or None
+            print(f"Fast transcription took {time.perf_counter() - start:.2f} seconds: {operation['result']}")
         except Exception as e:
             print(f"Transcription error: {e}")
         finally:
             operation["done"].set()
 
-    def _is_likely_invalid(self, text):
+    def _transcribe_digits(self, audio):
+        # With the hints loaded, Whisper answers silence and background noise
+        # with digits (usually "3"). Without them it does not, so only accept a
+        # hinted result when the unhinted pass also heard a number.
+        unhinted_text = self._decode(FAST_MODEL, audio)
+        if not normalize_digits(unhinted_text):
+            print(f"No number heard in MAT response: '{unhinted_text}'")
+            return None
+
+        hinted_text = self._decode(FAST_MODEL, audio, read_hints())
+        print(f"Whisper output: '{hinted_text}'")
+        return normalize_digits(hinted_text) or None
+
+    def transcribe_long(self, audio_file):
         """
-        Filter out likely hallucinations and non-English content using only built-in libraries
+        Transcribes a longer recording with the long model and waits for the result.
+        Args:
+            audio_file (str): The path to the audio file to be transcribed.
+        Returns:
+            str: The transcription result of the audio file, or None if nothing usable was heard.
         """
-        import re
-        
-        # 1. Check for excessive repetition (common hallucination pattern)
-        words = text.lower().split()
-        if len(words) > 2:
-            word_counts = {}
-            for word in words:
-                word_counts[word] = word_counts.get(word, 0) + 1
-            max_repetitions = max(word_counts.values())
-            # If more than 60% of words are the same word, likely hallucination
-            if max_repetitions / len(words) > 0.6:
-                return True
-        
-        # 2. Check character composition
-        total_chars = len(text)
-        if total_chars == 0:
-            return True
-        
-        # Count different character types
-        alpha_chars = len(re.findall(r'[a-zA-Z]', text))
-        digit_chars = len(re.findall(r'[0-9]', text))
-        space_chars = len(re.findall(r'\s', text))
-        punct_chars = len(re.findall(r'[.,!?;:\'"()-]', text))
-        
-        # Text should be mostly alphabetic, digits, spaces, and basic punctuation
-        normal_chars = alpha_chars + digit_chars + space_chars + punct_chars
-        normal_ratio = normal_chars / total_chars
-        
-        # If less than 80% normal characters, likely gibberish
-        if normal_ratio < 0.8:
-            return True
-        
-        # 3. Basic English likelihood check using common letter patterns
-        # English text should have reasonable vowel distribution
-        vowels = len(re.findall(r'[aeiouAEIOU]', text))
-        if alpha_chars > 0:
-            vowel_ratio = vowels / alpha_chars
-            # English typically has 35-45% vowels, but we'll be lenient
-            if vowel_ratio < 0.15 or vowel_ratio > 0.7:
-                return True
-        
-        # 4. Check for common non-English character patterns
-        # These often appear in Whisper hallucinations
-        non_english_patterns = [
-            r'[àáâãäåæçèéêëìíîïðñòóôõöøùúûüýþÿ]',  # Romance language accents
-            r'[αβγδεζηθικλμνξοπρστυφχψω]',  # Greek
-            r'[абвгдежзийклмнопрстуфхцчшщъыьэюя]',  # Cyrillic
-            r'[äöüß]',  # German
-            r'[\u4e00-\u9fff]',  # Chinese
-            r'[\u3040-\u309f\u30a0-\u30ff]',  # Japanese
-        ]
-        
-        for pattern in non_english_patterns:
-            if re.search(pattern, text, re.IGNORECASE):
-                return True
-        
-        # 5. Check for excessive punctuation or special characters
-        special_chars = len(re.findall(r'[^\w\s.,!?;:\'"()-]', text))
-        if special_chars / total_chars > 0.2:  # More than 20% special characters
-            return True
-        
-        # 6. Check for very long words (often hallucination artifacts)
-        long_words = [word for word in words if len(word) > 20]
-        if len(long_words) > 0:
-            return True
-        
-        # 7. Common English word check (lightweight version)
-        # Very basic check for at least some common English elements
-        common_english_elements = [
-            'the', 'and', 'to', 'of', 'a', 'in', 'is', 'it', 'you', 'that',
-            'he', 'was', 'for', 'on', 'are', 'as', 'with', 'his', 'they',
-            'i', 'at', 'be', 'this', 'have', 'from', 'or', 'one', 'had',
-            'by', 'but', 'not', 'what', 'all', 'were', 'we', 'when', 'your',
-            'can', 'said', 'there', 'each', 'do', 'if', 'will', 'up', 'out',
-            'so', 'about', 'who', 'get', 'which', 'go', 'me', 'when', 'make',
-            'can', 'like', 'time', 'no', 'just', 'him', 'know', 'take',
-            'people', 'into', 'year', 'your', 'good', 'some', 'could', 'them',
-            'see', 'other', 'than', 'then', 'now', 'look', 'only', 'come',
-            'its', 'over', 'think', 'also', 'back', 'after', 'use', 'two',
-            'how', 'our', 'work', 'first', 'well', 'way', 'even', 'new',
-            'want', 'because', 'any', 'these', 'give', 'day', 'most', 'us'
-        ]
-        
-        # For longer text, expect at least some common English words
-        if len(words) > 5:
-            english_word_count = sum(1 for word in words if word.lower() in common_english_elements)
-            english_ratio = english_word_count / len(words)
-            # For longer responses, expect at least 20% common English words
-            if english_ratio < 0.2:
-                return True
-        
-        return False
-                
+        with self.long_lock:
+            try:
+                start = time.perf_counter()
+                audio = load_audio(audio_file)
+                result = None
+                if audio.size >= SAMPLE_RATE * MIN_AUDIO_SECONDS:
+                    result = self._decode(LONG_MODEL, audio) or None
+                print(f"Long transcription took {time.perf_counter() - start:.1f} seconds: {audio_file}")
+                return result
+            except Exception as e:
+                print(f"Transcription error for {audio_file}: {e}")
+                return None

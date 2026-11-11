@@ -45,6 +45,10 @@ timestamp_manager = TimestampManager()
 vernier_manager = VernierManager()
 transcription_manager = TranscriptionManager()
 
+# Participant window tasks that record audio. Finishing one ends any recording it left running.
+PARTICIPANT_RECORDING_TASKS = {'test_transcription', 'ser_baseline', 'practice_test', 'test_1', 'test_2'}
+NOT_UNDERSTOOD_MESSAGE = "Sorry, I could not understand the response."
+
 update_message = None
 update_event = threading.Event()
 room_workflow_lock = threading.Lock()
@@ -101,7 +105,12 @@ def process_audio_files() -> Response:
         if file.endswith(".wav"):
             parts = file.split("_")
             if parts[0] == subject_id and len(parts) > 2:
-                transcription = transcribe_audio(os.path.join(audio_folder, file), timeout_seconds=240)
+                file_path = os.path.join(audio_folder, file)
+                # MAT answers are digit strings; everything else is free speech.
+                if "stressor_test" in file:
+                    transcription = transcribe_audio(file_path)
+                else:
+                    transcription = transcribe_and_store_long_audio(file_path, file)
                 emo_list = ser_manager.predict_emotion(os.path.join(audio_folder, file))
                 timestamp = parts[1]
 
@@ -219,6 +228,9 @@ def complete_task() -> Response:
         return jsonify({'error': 'A task ID and valid action are required.'}), 400
 
     is_completed = action == 'complete'
+    if is_completed and task_id in PARTICIPANT_RECORDING_TASKS:
+        cancel_participant_recording()
+
     event_type = 'task_completed' if is_completed else 'task_reopened'
     action_label = 'completed' if is_completed else 'reopened'
 
@@ -597,7 +609,7 @@ def process_answer() -> Response:
 
 @app.route('/set_current_test', methods=['POST'])
 def set_current_test() -> Response:
-    global test_manager, transcription_manager
+    global test_manager
     test_number = request.get_json().get('test_number')
     if test_number is None:
         raise ValueError("Missing 'test_number' in request JSON")
@@ -605,11 +617,6 @@ def set_current_test() -> Response:
     try: 
         test_manager.current_test_index = int(test_number)
         test_manager.current_question_index = 0
-        
-        # Clear stale results when Whisper is idle. A timed-out transcription
-        # must not prevent the next MAT from loading.
-        if int(test_number) > 0:
-            transcription_manager.reset(lock_timeout=0.1)
         
         print(f"Test set to {test_number}.")
         print(f"Current Question Index: {test_manager.current_question_index}")
@@ -940,7 +947,7 @@ def test_audio() -> Response:
     global recording_manager
     try:
         recording_manager.stop_recording()
-        transcription = transcribe_audio(recording_manager.recording_file)    
+        transcription = transcribe_audio(recording_manager.recording_file, digits_only=False)
       
         return jsonify({'result': transcription})
 
@@ -948,6 +955,17 @@ def test_audio() -> Response:
         print(f"An error occurred: {str(e)}")
         return jsonify({'status': 'error', 'message': str(e)}), 500
     
+@app.route('/cancel_recording', methods=['POST'])
+def cancel_recording() -> Response:
+    """Called when the participant window leaves a task that may still be recording."""
+    cancel_participant_recording()
+    return jsonify({'status': 'Recording cancelled.'})
+
+@app.route('/transcription_status', methods=['GET'])
+def transcription_status() -> Response:
+    global transcription_manager
+    return jsonify(transcription_manager.status())
+
 @app.route('/get_audio_devices', methods=['GET'])
 def get_audio_devices() -> Response:
     global recording_manager
@@ -994,7 +1012,7 @@ def record_task_audio():
     
     try:
         if action == 'start':
-            recording_manager.start_recording()
+            recording_manager.start_recording(task_audio=True)
             emotibit_streamer.event_marker = event_marker
             vernier_manager.event_marker = event_marker
 
@@ -1731,11 +1749,29 @@ def generate_timestamps(start_time_dt, segment_duration=20, output_folder="tmp/"
 ##################################################################
 ## Speech Recognition 
 ##################################################################
-def transcribe_audio(file, timeout_seconds=15) -> str:
+def transcribe_audio(file, timeout_seconds=15, digits_only=True) -> str:
     global transcription_manager
 
-    result = transcription_manager.transcribe(file, timeout_seconds=timeout_seconds)
-    return result if result is not None else "Sorry, I could not understand the response."
+    result = transcription_manager.transcribe(file, timeout_seconds=timeout_seconds, digits_only=digits_only)
+    return result if result is not None else NOT_UNDERSTOOD_MESSAGE
+
+def transcribe_and_store_long_audio(file_path, file_name) -> str:
+    """Transcribe a longer response and fill in its Transcription cell in the main CSV."""
+    global transcription_manager, subject_manager
+
+    result = transcription_manager.transcribe_long(file_path)
+    if result is None:
+        return NOT_UNDERSTOOD_MESSAGE
+
+    subject_manager.update_transcription(subject_manager.csv_file_path, file_name, result)
+    return result
+
+def cancel_participant_recording() -> None:
+    """End a recording the participant window left running, leaving Room Observation and PRS recordings alone."""
+    global recording_manager
+
+    if not recording_manager.task_audio_active:
+        recording_manager.cancel_recording()
 
 def run_flask():
     app.run(debug=False, use_reloader=False)
